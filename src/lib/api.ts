@@ -1,17 +1,37 @@
 /**
- * Cliente del core (FastAPI). Solo se usa desde el servidor: la API key
- * nunca viaja al browser, por eso no hay NEXT_PUBLIC_ en las variables.
+ * Cliente del core (FastAPI). Solo se usa desde el servidor: el token de
+ * sesion vive en una cookie httpOnly y nunca lo toca el navegador.
  */
 
-const BASE_URL = process.env.CORE_API_URL ?? "http://localhost:8080";
-const API_KEY = process.env.CORE_API_KEY ?? "";
+import { cookies } from "next/headers";
 
-/** Estados de negocio del playbook (apendice A). */
+const BASE_URL = process.env.CORE_API_URL ?? "http://localhost:8080";
+
+export const SESSION_COOKIE = "ups_session";
+
+export type Role = "admin" | "client";
+
 export type ReferralStatus =
   | "not_started"
   | "waiting_position"
   | "sent_confirmed"
   | "duplicate_or_error";
+
+export type SessionUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: Role;
+};
+
+export type Tenant = {
+  id: string;
+  name: string;
+  slug: string;
+  channel: "telegram" | "whatsapp";
+};
+
+export type Session = { user: SessionUser; tenants: Tenant[] };
 
 export type Metrics = {
   referidos_ok: number;
@@ -45,18 +65,25 @@ export type Candidate = {
   created_at: string;
 };
 
-export type Message = {
-  direction: "in" | "out";
-  text: string;
-  created_at: string;
-};
+export type Message = { direction: "in" | "out"; text: string; created_at: string };
 
 export type CandidateDetail = {
   candidate: Candidate & Record<string, unknown>;
   conversation: Message[];
 };
 
-/** Se distingue del Error comun para poder mostrar el core caido sin romper la pagina. */
+export type AdminUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: Role;
+  active: boolean;
+  last_login_at: string | null;
+  tenants: Tenant[];
+};
+
+export type AdminTenant = Tenant & { bot_handle: string | null; candidatos: number };
+
 export class CoreApiError extends Error {
   constructor(
     message: string,
@@ -67,12 +94,21 @@ export class CoreApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** 401 del core: la sesion caduco o el usuario dejo de ser valido. */
+export class SessionExpiredError extends CoreApiError {}
+
+async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
+  const auth = token ?? (await cookies()).get(SESSION_COOKIE)?.value;
+
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       ...init,
-      headers: { "x-api-key": API_KEY, ...init?.headers },
+      headers: {
+        "Content-Type": "application/json",
+        ...(auth ? { Authorization: `Bearer ${auth}` } : {}),
+        ...init?.headers,
+      },
       cache: "no-store",
     });
   } catch {
@@ -81,22 +117,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
 
+  if (response.status === 401) {
+    throw new SessionExpiredError("Tu sesion vencio.", 401);
+  }
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new CoreApiError(
-      response.status === 401
-        ? "La API key del dashboard no coincide con la del core."
-        : `El core respondio ${response.status}. ${detail.slice(0, 200)}`,
-      response.status,
-    );
+    let detail = "";
+    try {
+      detail = ((await response.json()) as { detail?: string }).detail ?? "";
+    } catch {
+      /* respuesta sin cuerpo JSON */
+    }
+    throw new CoreApiError(detail || `El core respondio ${response.status}.`, response.status);
   }
 
   return response.json() as Promise<T>;
 }
 
-export function getMetrics(inactiveDays = 3) {
-  return request<Metrics>(`/api/metrics?inactive_days=${inactiveDays}`);
+export function login(email: string, password: string) {
+  return request<{ token: string; user: SessionUser; tenants: Tenant[] }>(
+    "/api/auth/login",
+    { method: "POST", body: JSON.stringify({ email, password }) },
+    "",
+  );
 }
+
+export const getSession = () => request<Session>("/api/me");
+export const getMetrics = (dias = 3) => request<Metrics>(`/api/metrics?inactive_days=${dias}`);
 
 export function listCandidates(referralStatus?: ReferralStatus, limit = 50) {
   const params = new URLSearchParams({ limit: String(limit) });
@@ -104,12 +150,25 @@ export function listCandidates(referralStatus?: ReferralStatus, limit = 50) {
   return request<Candidate[]>(`/api/candidates?${params}`);
 }
 
-export function getCandidate(id: string) {
-  return request<CandidateDetail>(`/api/candidates/${id}`);
-}
+export const getCandidate = (id: string) => request<CandidateDetail>(`/api/candidates/${id}`);
 
-export function confirmReferral(id: string) {
-  return request<Candidate>(`/api/candidates/${id}/confirm-referral`, {
-    method: "POST",
+export const confirmReferral = (id: string) =>
+  request<Candidate>(`/api/candidates/${id}/confirm-referral`, { method: "POST" });
+
+// --- Administracion ---
+
+export const listUsers = () => request<AdminUser[]>("/api/admin/users");
+export const listTenants = () => request<AdminTenant[]>("/api/admin/tenants");
+
+export const createUser = (body: {
+  email: string;
+  password: string;
+  name?: string;
+  role: Role;
+}) => request<SessionUser>("/api/admin/users", { method: "POST", body: JSON.stringify(body) });
+
+export const assignTenants = (userId: string, tenantIds: string[]) =>
+  request<unknown>(`/api/admin/users/${userId}/tenants`, {
+    method: "PUT",
+    body: JSON.stringify({ tenant_ids: tenantIds }),
   });
-}
