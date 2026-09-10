@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# la plantilla si se versiona (no tiene secretos)
+!.env.example
