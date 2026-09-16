@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { AdminTenant, Tenant } from "@/lib/api";
+import { Boton, Etiqueta } from "@/components/ui";
 import { guardarBots } from "./actions";
 
 export function AsignarBots({
@@ -23,16 +24,24 @@ export function AsignarBots({
     return <p className="text-sm text-ink-soft">Ve todos los bots por ser administrador.</p>;
   }
 
-  const original = asignados.map((t) => t.id).sort().join(",");
+  const original = asignados
+    .map((t) => t.id)
+    .sort()
+    .join(",");
   const cambiado = seleccion.slice().sort().join(",") !== original;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-x-4 gap-y-2">
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
         {disponibles.map((t) => {
           const marcado = seleccion.includes(t.id);
           return (
-            <label key={t.id} className="flex cursor-pointer items-center gap-2 text-sm">
+            // Toda la etiqueta es zona de click: sin huecos muertos entre el
+            // checkbox y su texto, y con alto suficiente para el dedo.
+            <label
+              key={t.id}
+              className="flex min-h-9 cursor-pointer items-center gap-2 rounded-panel pr-1 text-sm transition-colors duration-150 hover:text-ink"
+            >
               <input
                 type="checkbox"
                 checked={marcado}
@@ -44,10 +53,10 @@ export function AsignarBots({
                 }}
                 className="h-3.5 w-3.5 accent-[var(--signal)]"
               />
-              <span>{t.name}</span>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">
-                {t.channel}
-              </span>
+              <span className={t.active ? "" : "text-ink-soft"}>{t.name}</span>
+              {/* Un bot de baja se puede seguir asignando: el cliente conserva
+                  el historial que ya tiene, solo deja de entrar gente nueva. */}
+              <Etiqueta>{t.active ? t.channel : "de baja"}</Etiqueta>
             </label>
           );
         })}
@@ -59,21 +68,25 @@ export function AsignarBots({
       {(cambiado || guardado) && (
         <div className="flex items-center gap-3">
           {cambiado && (
-            <button
-              type="button"
+            <Boton
+              variante="primario"
               disabled={pendiente}
+              className="min-h-8 px-2.5 py-1 text-xs"
               onClick={() =>
                 startTransition(async () => {
                   await guardarBots(userId, seleccion);
                   setGuardado(true);
                 })
               }
-              className="rounded-sm bg-ink px-2.5 py-1 text-xs font-medium text-paper disabled:opacity-60"
             >
               {pendiente ? "Guardando…" : "Guardar cambios"}
-            </button>
+            </Boton>
           )}
-          {guardado && !cambiado && <span className="text-xs text-ok">Asignación guardada.</span>}
+          {guardado && !cambiado && (
+            <span role="status" className="text-xs text-ok">
+              Asignación guardada.
+            </span>
+          )}
         </div>
       )}
     </div>

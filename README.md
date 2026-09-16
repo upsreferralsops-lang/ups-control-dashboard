@@ -16,7 +16,7 @@ Es solo el frontend. Toda la lógica y los datos viven en el core
 
 ```bash
 pnpm install
-cp .env.example .env.local   # y completar CORE_API_KEY
+cp .env.example .env.local   # y completar CORE_API_URL si hace falta
 pnpm dev
 ```
 
@@ -26,11 +26,9 @@ El panel queda en http://localhost:3000
 
 | Variable | Para qué |
 |---|---|
-| `CORE_API_URL` | Dónde escucha el core. En local, `http://localhost:8080` |
-| `CORE_API_KEY` | La misma `API_KEY` que tiene el core en su `.env` |
+| `CORE_API_URL` | Dónde escucha el core. En local, `http://localhost:8090` |
 
-Ninguna lleva prefijo `NEXT_PUBLIC_` a propósito: todo el fetch corre en
-Server Components, así la clave nunca llega al navegador.
+La sesión del panel usa JWT en cookie httpOnly (`POST /api/auth/login`); no hace falta API key estática.
 
 ## Levantar el core
 

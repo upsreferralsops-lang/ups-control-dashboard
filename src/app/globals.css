@@ -1,95 +1,272 @@
 @import "tailwindcss";
 
 /*
-  Consola de operaciones, no landing page. Neutros calidos (no el gris azulado
-  por defecto), un ocre de senalizacion como unico acento, y semaforo discreto
-  para los estados. Los datos van en monoespaciada: en un panel operativo las
-  columnas de numeros tienen que alinearse.
+  Design system Logistics Talent Operations (Stitch):
+  chocolate #351C15, ámbar #D97706, neutros slate, densidades operativas.
+  Densidad alta, bordes estructurales, foco siempre visible, tabular-nums.
 */
 :root {
-  --paper: #f7f5f2;
+  --paper: #f8fafc;
   --surface: #ffffff;
-  --surface-sunk: #efece7;
-  --line: #e2ddd5;
-  --line-strong: #cdc6bb;
-  --ink: #1c1917;
-  --ink-soft: #6b6259;
-  --ink-faint: #97907f;
+  --surface-sunk: #f1f5f9;
+  --surface-raised: #ffffff;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --ink-faint: #94a3b8;
 
-  --signal: #b45309;
-  --signal-ink: #8a3f07;
-  --signal-wash: #fdf3e7;
+  --brand: #351c15;
+  --brand-ink: #28150f;
+  --brand-wash: #f5ebe7;
 
-  --ok: #15803d;
-  --ok-wash: #eaf5ec;
-  --warn: #a16207;
-  --warn-wash: #fbf3e0;
-  --bad: #b3261e;
-  --bad-wash: #fbeceb;
-  --info: #1d4e6b;
-  --info-wash: #e9f1f5;
+  --signal: #d97706;
+  --signal-ink: #b45309;
+  --signal-wash: #fffbeb;
+
+  --ok: #059669;
+  --ok-wash: #ecfdf5;
+  --ok-border: #34d399;
+  --ok-ink: #065f46;
+
+  --warn: #d97706;
+  --warn-wash: #fffbeb;
+  --warn-border: #fbbf24;
+  --warn-ink: #92400e;
+
+  --bad: #dc2626;
+  --bad-wash: #fef2f2;
+  --bad-border: #f87171;
+  --bad-ink: #991b1b;
+
+  --attention: #ea580c;
+  --attention-wash: #fff7ed;
+  --attention-border: #fb923c;
+  --attention-ink: #9a3412;
+
+  --info: #64748b;
+  --info-wash: #f8fafc;
+  --info-border: #94a3b8;
+  --info-ink: #334155;
+
+  --lift: 0 1px 0 0 var(--line), 0 6px 16px -12px rgb(15 23 42 / 0.12);
+  --radius: 0.25rem;
+  --radius-panel: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #16130f;
-    --surface: #1e1a15;
-    --surface-sunk: #241f19;
-    --line: #332c24;
-    --line-strong: #463d31;
-    --ink: #f2ede4;
-    --ink-soft: #b3a897;
-    --ink-faint: #837868;
+    --paper: #0f172a;
+    --surface: #1e293b;
+    --surface-sunk: #162032;
+    --surface-raised: #243247;
+    --line: #334155;
+    --line-strong: #475569;
+    --ink: #f1f5f9;
+    --ink-soft: #94a3b8;
+    --ink-faint: #64748b;
 
-    --signal: #e2a04a;
-    --signal-ink: #f0c084;
+    --brand: #e8bdb1;
+    --brand-ink: #ffdbd1;
+    --brand-wash: #2a1814;
+
+    --signal: #fbbf24;
+    --signal-ink: #fcd34d;
     --signal-wash: #33260f;
 
-    --ok: #6ec48a;
-    --ok-wash: #16251a;
-    --warn: #d9a944;
+    --ok: #34d399;
+    --ok-wash: #052e1f;
+    --ok-border: #059669;
+    --ok-ink: #a7f3d0;
+
+    --warn: #fbbf24;
     --warn-wash: #2b2211;
-    --bad: #e08b83;
+    --warn-border: #d97706;
+    --warn-ink: #fde68a;
+
+    --bad: #f87171;
     --bad-wash: #2e1815;
-    --info: #82b4cf;
-    --info-wash: #14262f;
+    --bad-border: #dc2626;
+    --bad-ink: #fecaca;
+
+    --attention: #fb923c;
+    --attention-wash: #2a1608;
+    --attention-border: #ea580c;
+    --attention-ink: #fed7aa;
+
+    --info: #94a3b8;
+    --info-wash: #1e293b;
+    --info-border: #64748b;
+    --info-ink: #cbd5e1;
+
+    --lift: 0 1px 0 0 var(--line), 0 8px 20px -12px rgb(0 0 0 / 0.8);
   }
+}
+
+/*
+  Pantalla de marca (login): NO sigue el tema del sistema. El mockup es un
+  panel chocolate contra un formulario claro, y eso tiene que verse igual en
+  light y en dark. Sin esto, prefers-color-scheme: dark invierte --brand a
+  rosa claro y --paper a azul marino, y el login queda irreconocible.
+
+  Se redeclaran las variables, no las clases: asi Boton, CAMPO y Aviso siguen
+  siendo los mismos componentes y resuelven al valor claro por herencia.
+*/
+.tema-fijo {
+  color-scheme: light;
+
+  --paper: #f8fafc;
+  --surface: #ffffff;
+  --surface-sunk: #f1f5f9;
+  --surface-raised: #ffffff;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --ink-faint: #94a3b8;
+
+  --brand: #351c15;
+  --brand-ink: #28150f;
+  --brand-wash: #f5ebe7;
+
+  --signal: #d97706;
+  --signal-ink: #b45309;
+  --signal-wash: #fffbeb;
+
+  --ok: #059669;
+  --ok-wash: #ecfdf5;
+  --ok-border: #34d399;
+  --ok-ink: #065f46;
+
+  --warn: #d97706;
+  --warn-wash: #fffbeb;
+  --warn-border: #fbbf24;
+  --warn-ink: #92400e;
+
+  --bad: #dc2626;
+  --bad-wash: #fef2f2;
+  --bad-border: #f87171;
+  --bad-ink: #991b1b;
+
+  color: var(--ink);
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
   --color-sunk: var(--surface-sunk);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-wash: var(--brand-wash);
   --color-signal: var(--signal);
   --color-signal-ink: var(--signal-ink);
   --color-signal-wash: var(--signal-wash);
   --color-ok: var(--ok);
   --color-ok-wash: var(--ok-wash);
+  --color-ok-border: var(--ok-border);
+  --color-ok-ink: var(--ok-ink);
   --color-warn: var(--warn);
   --color-warn-wash: var(--warn-wash);
+  --color-warn-border: var(--warn-border);
+  --color-warn-ink: var(--warn-ink);
   --color-bad: var(--bad);
   --color-bad-wash: var(--bad-wash);
+  --color-bad-border: var(--bad-border);
+  --color-bad-ink: var(--bad-ink);
+  --color-attention: var(--attention);
+  --color-attention-wash: var(--attention-wash);
+  --color-attention-border: var(--attention-border);
+  --color-attention-ink: var(--attention-ink);
   --color-info: var(--info);
   --color-info-wash: var(--info-wash);
-  --font-sans: var(--font-archivo);
-  --font-mono: var(--font-plex-mono);
+  --color-info-border: var(--info-border);
+  --color-info-ink: var(--info-ink);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
+  --radius-panel: var(--radius-panel);
+  --radius-control: var(--radius);
+  --shadow-lift: var(--lift);
 }
 
 body {
   background: var(--paper);
   color: var(--ink);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Etiquetas de seccion: cortas, en versalitas, con tracking amplio. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+.font-mono,
+[class*="tabular"] {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--signal-wash);
+  color: var(--signal-ink);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .eyebrow {
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.025em;
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+.tabla-pegajosa thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.saltar-al-contenido {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 50;
+  transform: translateY(-200%);
+  transition-property: transform;
+  transition-duration: 150ms;
+}
+.saltar-al-contenido:focus-visible {
+  transform: translateY(0);
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.45;
+  }
+}
+.latido {
+  animation: latido 1.4s ease-in-out infinite;
 }

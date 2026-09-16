@@ -1,12 +1,17 @@
+import { redirect } from "next/navigation";
 import { CoreApiError, listTenants, listUsers } from "@/lib/api";
 import { requireAdmin } from "@/lib/session";
+import { PANEL_ADMIN_CLIENTES_BOTS } from "@/lib/features";
 import { timeAgo } from "@/lib/status";
+import { Aviso, Bloque, Etiqueta } from "@/components/ui";
 import { AsignarBots } from "./AsignarBots";
+import { Bot } from "./Bot";
 import { NuevoUsuario } from "./NuevoUsuario";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  if (!PANEL_ADMIN_CLIENTES_BOTS) redirect("/");
   await requireAdmin();
 
   let usuarios, bots;
@@ -14,11 +19,14 @@ export default async function AdminPage() {
     [usuarios, bots] = await Promise.all([listUsers(), listTenants()]);
   } catch (error) {
     return (
-      <div className="border-l-2 border-bad bg-bad-wash px-4 py-3 text-sm">
+      <Aviso tono="bad">
         {error instanceof CoreApiError ? error.message : "Error leyendo la administración."}
-      </div>
+      </Aviso>
     );
   }
+
+  const totalCandidatos = bots.reduce((n, b) => n + b.candidatos, 0);
+  const activos = bots.filter((b) => b.active).length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -31,40 +39,49 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <section className="border border-line bg-surface p-5">
-        <p className="eyebrow">Bots activos</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {bots.map((b) => (
-            <div key={b.id} className="border border-line px-4 py-3">
-              <p className="text-sm font-medium">{b.name}</p>
-              <p className="mt-0.5 font-mono text-[11px] text-ink-faint">
-                {b.bot_handle ?? b.slug} · {b.channel}
-              </p>
-              <p className="mt-2 font-mono text-lg font-semibold tabular-nums">
-                {b.candidatos}
-                <span className="ml-1.5 text-xs font-normal text-ink-faint">candidatos</span>
-              </p>
-            </div>
-          ))}
-          {bots.length === 0 && <p className="text-sm text-ink-soft">No hay bots creados.</p>}
-        </div>
-      </section>
+      <Bloque
+        titulo="Inventario de bots"
+        extra={
+          <span className="text-xs tabular-nums text-ink-faint">
+            {bots.length} registros · {activos} activos · {totalCandidatos} candidatos
+          </span>
+        }
+      >
+        {bots.length === 0 ? (
+          <p className="text-sm text-ink-soft">No hay bots creados.</p>
+        ) : (
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {bots.map((b) => (
+              <Bot
+                key={b.id}
+                bot={b}
+                parte={totalCandidatos > 0 ? (b.candidatos / totalCandidatos) * 100 : 0}
+              />
+            ))}
+          </div>
+        )}
+      </Bloque>
 
-      <section className="border border-line bg-surface p-5">
-        <p className="eyebrow">Nuevo usuario</p>
-        <div className="mt-4">
-          <NuevoUsuario />
-        </div>
-      </section>
+      <Bloque titulo="Nuevo usuario">
+        <NuevoUsuario bots={bots} />
+      </Bloque>
 
-      <section className="flex flex-col gap-3">
-        <p className="eyebrow">Usuarios ({usuarios.length})</p>
-        <div className="overflow-x-auto border border-line bg-surface">
+      <Bloque
+        titulo="Usuarios"
+        extra={<span className="text-xs tabular-nums text-ink-faint">{usuarios.length}</span>}
+        className="overflow-hidden"
+        cuerpoClassName="p-0"
+      >
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line">
+              <tr className="border-b border-line bg-sunk/40">
                 {["Usuario", "Rol", "Bots asignados", "Último acceso"].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left">
+                  <th
+                    key={h}
+                    scope="col"
+                    className={`px-5 py-2.5 ${h === "Último acceso" ? "text-right" : "text-left"}`}
+                  >
                     <span className="eyebrow">{h}</span>
                   </th>
                 ))}
@@ -72,26 +89,19 @@ export default async function AdminPage() {
             </thead>
             <tbody>
               {usuarios.map((u) => (
-                <tr key={u.id} className="border-b border-line/60 last:border-0 align-top">
-                  <td className="px-4 py-3">
+                <tr key={u.id} className="border-t border-line/60 align-top">
+                  <td className="px-5 py-3.5">
                     <p className="font-medium">{u.name ?? "—"}</p>
                     <p className="font-mono text-xs text-ink-faint">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 ${
-                        u.role === "admin" ? "text-signal-ink" : "text-ink-soft"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          u.role === "admin" ? "bg-signal" : "bg-ink-faint"
-                        }`}
-                      />
-                      {u.role === "admin" ? "Administrador" : "Cliente"}
-                    </span>
+                  <td className="whitespace-nowrap px-5 py-3.5">
+                    {u.role === "admin" ? (
+                      <Etiqueta className="bg-signal-wash text-signal-ink">Administrador</Etiqueta>
+                    ) : (
+                      <Etiqueta>Cliente</Etiqueta>
+                    )}
                   </td>
-                  <td className="min-w-72 px-4 py-3">
+                  <td className="min-w-72 px-5 py-3.5">
                     <AsignarBots
                       userId={u.id}
                       asignados={u.tenants}
@@ -99,7 +109,7 @@ export default async function AdminPage() {
                       esAdmin={u.role === "admin"}
                     />
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-ink-faint">
+                  <td className="whitespace-nowrap px-5 py-3.5 text-right text-xs tabular-nums text-ink-faint">
                     {u.last_login_at ? timeAgo(u.last_login_at) : "nunca"}
                   </td>
                 </tr>
@@ -107,7 +117,7 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </Bloque>
     </div>
   );
 }

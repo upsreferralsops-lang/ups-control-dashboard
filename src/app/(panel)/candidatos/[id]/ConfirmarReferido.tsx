@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Aviso, Boton } from "@/components/ui";
 import { confirmarReferido } from "./actions";
 
 export function ConfirmarReferido({
@@ -16,8 +17,8 @@ export function ConfirmarReferido({
 
   if (yaConfirmado) {
     return (
-      <p className="flex items-center gap-2 text-sm text-ok">
-        <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+      <p className="flex items-center gap-2 text-sm font-medium text-ok-ink">
+        <span className="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden />
         Referido confirmado.
       </p>
     );
@@ -25,28 +26,33 @@ export function ConfirmarReferido({
 
   if (!preguntando) {
     return (
-      <button
-        type="button"
-        onClick={() => setPreguntando(true)}
-        className="rounded-sm bg-ink px-3 py-2 text-sm font-medium text-paper transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
-      >
-        Marcar como referido
-      </button>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-ink-soft">
+          Marcá el referido solo cuando ya lo verificaste en Internal Mobility.
+        </p>
+        <Boton variante="primario" onClick={() => setPreguntando(true)}>
+          Marcar como referido
+        </Boton>
+        <p className="text-xs text-ink-faint">Estado actual: no confirmado</p>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-ink-soft">
-        Confirmá solo si ya viste el <strong className="text-ink">Congratulations</strong> en
-        Internal Mobility. Al confirmar, el candidato recibe el aviso para revisar su correo.
-      </p>
+      <div className="rounded-control border border-warn-border bg-warn-wash px-3 py-2.5">
+        <p className="text-sm text-warn-ink">
+          Confirmá solo si ya viste el <strong>Congratulations</strong> en Internal Mobility. Esto
+          marca el caso como referido en la consola.
+        </p>
+      </div>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
+        <Boton
+          variante="ok"
           disabled={pendiente}
           onClick={() =>
             startTransition(async () => {
+              setError(null);
               try {
                 await confirmarReferido(candidateId);
               } catch {
@@ -54,24 +60,14 @@ export function ConfirmarReferido({
               }
             })
           }
-          className="rounded-sm bg-ok px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {pendiente ? "Confirmando…" : "Sí, ya lo referí"}
-        </button>
-        <button
-          type="button"
-          disabled={pendiente}
-          onClick={() => setPreguntando(false)}
-          className="rounded-sm border border-line px-3 py-2 text-sm text-ink-soft hover:border-line-strong hover:text-ink disabled:opacity-60"
-        >
+        </Boton>
+        <Boton disabled={pendiente} onClick={() => setPreguntando(false)}>
           Cancelar
-        </button>
+        </Boton>
       </div>
-      {error && (
-        <p role="alert" className="border-l-2 border-bad bg-bad-wash px-3 py-2 text-sm">
-          {error}
-        </p>
-      )}
+      {error && <Aviso tono="bad">{error}</Aviso>}
     </div>
   );
 }
