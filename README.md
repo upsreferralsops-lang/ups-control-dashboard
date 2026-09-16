@@ -6,40 +6,62 @@ de candidatos y ficha con la conversación completa.
 Es solo el frontend. Toda la lógica y los datos viven en el core
 (`ups-core-backend`), que expone la API que este panel consume.
 
-## Requisitos
+## Producción (Vercel)
+
+| Recurso | URL |
+|---|---|
+| Panel | https://ups-control-dashboard.vercel.app (alias del team: `…-ups-team1.vercel.app`) |
+| Core (API) | https://api.referidosops.com |
+
+El panel en Vercel **no es prod completo** hasta que el proyecto tenga la variable
+**`CORE_API_URL=https://api.referidosops.com`** (Production **y** Preview) y un
+**Redeploy** después de cargarla.
+
+Si en el login aparece:
+
+> No se pudo conectar con el core en **http://localhost:8090**
+
+falta esa variable en **ese** deployment (Vercel usa el default del código).
+Guía paso a paso: **[docs/conexion-core-produccion.md](docs/conexion-core-produccion.md)**.
+
+Índice de documentación: **[docs/README.md](docs/README.md)**.
+
+## Desarrollo local
+
+### Requisitos
 
 - Node 20 o superior
-- pnpm (el gestor del proyecto; está fijado en `packageManager`)
+- pnpm (fijado en `packageManager`)
 - El core corriendo y accesible
 
-## Puesta en marcha
+### Puesta en marcha
 
 ```bash
 pnpm install
-cp .env.example .env.local   # y completar CORE_API_URL si hace falta
+cp .env.example .env.local
 pnpm dev
 ```
 
-El panel queda en http://localhost:3000
+Panel en http://localhost:3000
 
-### Variables
+### Variables (local)
 
-| Variable | Para qué |
+| Variable | Valor local |
 |---|---|
-| `CORE_API_URL` | Dónde escucha el core. En local, `http://localhost:8090` |
+| `CORE_API_URL` | `http://localhost:8090` (ver `.env.example`) |
 
-La sesión del panel usa JWT en cookie httpOnly (`POST /api/auth/login`); no hace falta API key estática.
+La sesión usa JWT en cookie httpOnly (`POST /api/auth/login`); no hace falta API key en el front.
 
-## Levantar el core
+### Levantar el core
 
-Desde el repo `ups-core-backend`:
+Desde `ups-core-backend`:
 
 ```bash
 docker compose up -d
-venv/Scripts/python.exe -m uvicorn app.api.main:app --port 8080
+# API según tu compose / uvicorn (puerto 8090 en .env.example del panel)
 ```
 
-Si el core no responde, el panel lo avisa en pantalla en vez de romperse.
+Si el core no responde, el panel avisa en pantalla en vez de romperse.
 
 ## Comandos
 
