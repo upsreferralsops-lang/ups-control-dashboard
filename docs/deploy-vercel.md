@@ -21,6 +21,31 @@ Opciones:
 
 ## Paso 1 — Código en GitHub
 
+### Cuenta correcta (upsreferralsops-lang)
+
+Los pushes deben ir con la org, no con el usuario personal. En PowerShell:
+
+```powershell
+gh auth switch -u upsreferralsops-lang
+gh auth setup-git
+```
+
+En **cada repo** (`ups-control-dashboard`, `ups-core-backend`), la identidad del **commit** es local al repo (no uses `git config --global` si mezclás cuentas):
+
+```powershell
+git config user.name "upsreferralsops-lang"
+git config user.email "ups.referidos.ops@gmail.com"
+```
+
+Comprobación:
+
+```powershell
+gh auth status          # active account: upsreferralsops-lang
+git log -1 --format="%an <%ae>"
+```
+
+> El **autor** del commit (`Edavi11` vs `upsreferralsops-lang`) **no** provoca el 404 de Vercel; el build se dispara igual. Sí importa para auditoría y para que **Vercel → Git** esté instalado en la **org** `upsreferralsops-lang`, no solo en tu GitHub personal (Settings → Git en el proyecto Vercel).
+
 Desde la carpeta del dashboard:
 
 ```powershell
