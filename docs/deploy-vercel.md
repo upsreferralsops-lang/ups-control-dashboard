@@ -44,7 +44,21 @@ gh auth status          # active account: upsreferralsops-lang
 git log -1 --format="%an <%ae>"
 ```
 
-> El **autor** del commit (`Edavi11` vs `upsreferralsops-lang`) **no** provoca el 404 de Vercel; el build se dispara igual. Sí importa para auditoría y para que **Vercel → Git** esté instalado en la **org** `upsreferralsops-lang`, no solo en tu GitHub personal (Settings → Git en el proyecto Vercel).
+> El **autor** del commit (`Edavi11` vs `upsreferralsops-lang`) **no** provoca el 404 de Vercel; el build se dispara igual. Sí importa para **Vercel → Git** estar instalado en la org `upsreferralsops-lang`.
+
+### Repo privado + plan Hobby (deploy **Blocked**)
+
+Si Vercel muestra *“commit author did not have contributing access”* y *“Hobby Plan does not support collaboration for private repositories”*, hay dos salidas sin Pro:
+
+1. **Recomendado (este proyecto):** repo del dashboard **público** — no hay secretos en el código; `CORE_API_URL` vive solo en Vercel. Comando (org admin):
+
+   ```powershell
+   gh repo edit upsreferralsops-lang/ups-control-dashboard --visibility public --accept-visibility-change-consequences
+   ```
+
+2. **Alternativa:** desconectar Git en Vercel y desplegar solo con `vercel deploy --prod` (CLI).
+
+> **Vercel → Git** debe estar instalado en la org `upsreferralsops-lang`, no solo en tu GitHub personal (Settings → Git en el proyecto Vercel).
 
 Desde la carpeta del dashboard:
 
