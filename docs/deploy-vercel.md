@@ -118,6 +118,30 @@ Si el login falla con error de conexión:
 
 ---
 
+## Si ves 404 NOT_FOUND (pero el build lista `/login`)
+
+**No es pnpm.** Si en los logs aparece `next build` con rutas (`/login`, `/candidatos`, …), la compilación está bien. El 404 viene del **edge de Vercel**, no de Next.
+
+### A) Dominio `https://ups-control-dashboard.vercel.app`
+
+Ese hostname **global** a veces **no enruta** al deployment del team aunque aparezca como alias en el panel. En la práctica responde `X-Vercel-Error: NOT_FOUND` sin servir la app.
+
+**Usar la URL del team (la que sí enruta):**
+
+`https://ups-control-dashboard-ups-team1.vercel.app`
+
+Alternativas: dominio propio en **Settings → Domains**, o renombrar el proyecto en Vercel para obtener otro `*.vercel.app` libre.
+
+### B) Protección de deployments (Vercel Authentication)
+
+Si la URL correcta redirige a `vercel.com/sso-api` o pide login de **Vercel**, no es el panel: es **Deployment Protection** del team.
+
+**Project → Settings → Deployment Protection** → desactivar protección en **Production** (panel operativo debe ser público; la auth es la del core vía cookie JWT).
+
+El repo incluye `vercel.json` con `"framework": "nextjs"` para que Git no trate el proyecto como **Other** + output `.` (configuración que no corresponde a App Router).
+
+---
+
 ## Dominio propio (opcional)
 
 **Project Settings → Domains** → añade `panel.tudominio.com` y configura el CNAME que indique Vercel.
