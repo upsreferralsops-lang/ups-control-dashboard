@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import {
   confirmReferral,
   createImprovementCase,
+  getCandidate,
   setImprovementCaseActive,
+  type Message,
 } from "@/lib/api";
 
 /**
@@ -20,6 +22,18 @@ export async function confirmarReferido(candidateId: string) {
   revalidatePath("/candidatos");
   // Confirmar un referido cambia las metricas del Home (referidos_ok, etc.).
   revalidatePath("/");
+}
+
+export async function leerConversacion(
+  candidateId: string,
+  canal?: "telegram" | "whatsapp",
+): Promise<{ ok: true; messages: Message[] } | { ok: false }> {
+  try {
+    const detalle = await getCandidate(candidateId, canal);
+    return { ok: true, messages: detalle.conversation };
+  } catch {
+    return { ok: false };
+  }
 }
 
 /** Correccion humana anclada a un mensaje: regla solo para el tenant del candidato. */

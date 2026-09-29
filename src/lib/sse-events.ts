@@ -7,6 +7,10 @@ export type DashboardSseEvent = {
   referral_status?: string;
   status?: string;
   referral_success?: boolean;
+  remaining_usd?: number | null;
+  nivel?: string;
+  user_id?: string;
+  thread_id?: string;
 };
 
 export function parseDashboardEvent(raw: string): DashboardSseEvent | null {
@@ -35,35 +39,55 @@ function respetaFiltroCliente(event: DashboardSseEvent, clienteId: string): bool
   return event.tenant_id === clienteId;
 }
 
+/** Home usa ?cliente=; Reportes y el listado usan ?bot=. */
+function tenantFiltroEnUrl(search: string): string {
+  const q = new URLSearchParams(search);
+  return q.get("cliente") || q.get("bot") || "";
+}
+
 /**
  * Decide si router.refresh() aporta algo en la ruta actual.
- * - Ficha: solo el candidate_id de la URL.
+ * - Ficha y /conversacion: solo el candidate_id de la URL (incluye mensaje_entrante).
  * - Listado: eventos con candidate_id (salvo solo "mensaje_entrante").
- * - Home: solo si mueve metricas y coincide el ?cliente= opcional.
+ * - Home y Reportes: solo si mueve metricas y coincide ?cliente= o ?bot=.
  */
 export function shouldRefreshPanel(
   pathname: string,
   search: string,
   event: DashboardSseEvent,
+  userId?: string,
 ): boolean {
+  if (event.type === "ops_message") {
+    if (!pathname.startsWith("/asistente")) return false;
+    if (userId && event.user_id && event.user_id !== userId) return false;
+    return true;
+  }
+  if (event.type === "credits_low" || event.type === "notification") {
+    return true;
+  }
   if (event.type !== "candidate_updated" || !event.candidate_id) return false;
 
-  const cliente = new URLSearchParams(search).get("cliente") ?? "";
+  const tenantFiltro = tenantFiltroEnUrl(search);
 
-  const ficha = pathname.match(/^\/candidatos\/([^/]+)\/?$/);
-  if (ficha) {
+  const ficha = pathname.match(/^\/candidatos\/([^/]+)/);
+  if (ficha && pathname !== "/candidatos") {
     return event.candidate_id === ficha[1];
   }
 
   if (pathname === "/candidatos") {
-    if (!respetaFiltroCliente(event, cliente)) return false;
+    if (!respetaFiltroCliente(event, tenantFiltro)) return false;
     if (event.reason === "mensaje_entrante") return false;
     return true;
   }
 
   if (pathname === "/") {
     if (!eventAfectaMetricas(event)) return false;
-    return respetaFiltroCliente(event, cliente);
+    return respetaFiltroCliente(event, tenantFiltro);
+  }
+
+  if (pathname === "/reportes" || pathname.startsWith("/reportes/")) {
+    if (!eventAfectaMetricas(event)) return false;
+    return respetaFiltroCliente(event, tenantFiltro);
   }
 
   if (pathname.startsWith("/admin")) return false;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   CoreApiError,
+  getCredits,
   getMetrics,
   listCandidates,
   listTenants,
@@ -11,20 +12,23 @@ import {
   type Metrics,
   type ReferralStatus,
   type TenantChannel,
+  type TenantCredits,
 } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
 import {
   IconoCandidatos,
   IconoConsulta,
-  IconoConversacion,
   IconoEdificio,
   IconoEnviar,
   IconoPersonaCheck,
 } from "@/lib/icons";
 import { fullName, presentacionReferido, timeAgo } from "@/lib/status";
 import { PANEL_ADMIN_CLIENTES_BOTS } from "@/lib/features";
+import { esCanalActivo } from "@/lib/canales";
+import { nombreVisibleCliente } from "@/lib/etiquetas-cliente";
 import { SelectorCliente } from "./SelectorCliente";
+import { RenovarSesionBoton } from "./RenovarSesionBoton";
 
 export const dynamic = "force-dynamic";
 
@@ -85,12 +89,13 @@ type Fila = {
   channels: TenantChannel[];
   porCanal: Partial<Record<TenantChannel["channel"], number>>;
   candidatos: number | null;
+  creditos?: TenantCredits;
 };
 
-const CANALES = [
-  { channel: "whatsapp", label: "Bot WhatsApp", Icono: IconoConversacion, color: "text-ok" },
+const CANALES = ([
+  { channel: "whatsapp", label: "Bot WhatsApp", Icono: IconoEnviar, color: "text-ok" },
   { channel: "telegram", label: "Bot Telegram", Icono: IconoEnviar, color: "text-sky-600" },
-] as const;
+] as const).filter((c) => esCanalActivo(c.channel));
 
 function TarjetaBot({
   label,
@@ -137,7 +142,7 @@ function FilaCliente({ f }: { f: Fila }) {
         <div className="mt-0.5 font-mono text-xs text-ink-soft">{f.meta}</div>
       </div>
 
-      <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className={`grid flex-1 grid-cols-1 gap-4 ${CANALES.length > 1 ? "sm:grid-cols-2" : ""}`}>
         {CANALES.map(({ channel, label, Icono, color }) => (
           <TarjetaBot
             key={channel}
@@ -150,13 +155,30 @@ function FilaCliente({ f }: { f: Fila }) {
         ))}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-6 pt-2 lg:justify-end lg:pt-0">
+      <div className="flex shrink-0 items-center justify-between gap-4 pt-2 lg:justify-end lg:pt-0">
+        <div className="text-right">
+          <div className="text-xs font-medium text-ink-soft">Créditos bot</div>
+          <div
+            className={`text-sm font-bold tabular-nums ${
+              f.creditos?.alerta
+                ? f.creditos.nivel === "agotado"
+                  ? "text-bad-ink"
+                  : "text-warn-ink"
+                : "text-brand"
+            }`}
+          >
+            {f.creditos?.remaining_usd == null
+              ? "—"
+              : `US$ ${f.creditos.remaining_usd.toFixed(2)}`}
+          </div>
+        </div>
         <div className="text-right">
           <div className="text-xs font-medium text-ink-soft">Total Cliente</div>
           <div className="text-sm font-bold tabular-nums text-brand">
             {f.candidatos == null ? "—" : `${f.candidatos.toLocaleString("es")} candidatos`}
           </div>
         </div>
+        <RenovarSesionBoton tenantId={f.id} />
         <Link
           href={`/candidatos?bot=${f.id}`}
           title="Ver detalle"
@@ -200,44 +222,56 @@ export default async function Home({
   let recientes: Candidate[];
   let adminTenants: AdminTenant[] | null = null;
   let adminUsers: AdminUser[] | null = null;
+  const creditosPorTenant = new Map<string, TenantCredits>();
 
   try {
     if (esAdmin) {
-      [metrics, recientes, adminTenants, adminUsers] = await Promise.all([
+      const [m, rec, ats, aus, creditos] = await Promise.all([
         getMetrics(3, cliente || undefined),
         listCandidates({ tenantId: cliente || undefined }, 5),
         listTenants(),
         listUsers(),
+        getCredits().catch(() => null),
       ]);
+      metrics = m;
+      recientes = rec;
+      adminTenants = ats;
+      adminUsers = aus;
+      for (const item of creditos?.tenants ?? []) {
+        creditosPorTenant.set(item.tenant_id, item);
+      }
     } else {
-      [metrics, recientes] = await Promise.all([
+      const [m, rec, creditos] = await Promise.all([
         getMetrics(3, cliente || undefined),
         listCandidates({ tenantId: cliente || undefined }, 5),
+        getCredits().catch(() => null),
       ]);
+      metrics = m;
+      recientes = rec;
+      for (const item of creditos?.tenants ?? []) {
+        creditosPorTenant.set(item.tenant_id, item);
+      }
     }
   } catch (error) {
     return <AvisoCore mensaje={error instanceof CoreApiError ? error.message : "Error inesperado."} />;
   }
 
-  // Admin: una fila por cliente, identificada por quien lo opera. Cliente: su
-  // propio bot, donde el dueno es el mismo usuario que mira la pantalla.
+  const canalesDe = (raw: TenantChannel[] | undefined): TenantChannel[] =>
+    Array.isArray(raw) ? raw : [];
+
+  // Admin: una fila por cliente, con o sin bot. Cliente: sus bots asignados.
   const todas: Fila[] =
     esAdmin && adminTenants && adminUsers
       ? adminTenants.map((t) => {
-          const owners = adminUsers!.filter(
-            (u) => u.role === "client" && u.tenants.some((tt) => tt.id === t.id),
-          );
           const alta = t.created_at ? new Date(t.created_at).getFullYear() : null;
           return {
             id: t.id,
-            nombre:
-              owners.length > 0
-                ? owners.map((o) => o.name ?? o.email).join(", ")
-                : "Sin usuario asignado",
+            nombre: nombreVisibleCliente(t.id, adminUsers),
             meta: `ID: ${t.slug}${alta ? ` · Alta ${alta}` : ""}`,
-            channels: t.channels ?? [],
+            channels: canalesDe(t.channels),
             porCanal: t.candidatos_por_canal ?? {},
             candidatos: t.candidatos,
+            creditos: creditosPorTenant.get(t.id),
           };
         })
       : tenants.map((t) => {
@@ -247,16 +281,25 @@ export default async function Home({
             id: t.id,
             nombre: user.name ?? user.email,
             meta: `ID: ${t.slug}${alta ? ` · Alta ${alta}` : ""}`,
-            channels: t.channels ?? [],
+            channels: canalesDe(t.channels),
             porCanal,
+            creditos: creditosPorTenant.get(t.id),
             // El core no le da el total por bot a un cliente, pero la suma por
             // canal es ese mismo total y sale de la misma consulta.
             candidatos: Object.values(porCanal).reduce((n, v) => n + (v ?? 0), 0),
           };
         });
 
+  todas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
   const filas = cliente ? todas.filter((f) => f.id === cliente) : todas;
-  const botsActivos = filas.reduce((n, f) => n + f.channels.filter((c) => c.active).length, 0);
+  const tieneTelegram = (f: Fila) => f.channels.some((c) => esCanalActivo(c.channel));
+  const clientesConBot = filas.filter(tieneTelegram).length;
+  const botsActivos = filas.reduce(
+    (n, f) => n + f.channels.filter((c) => esCanalActivo(c.channel) && c.active).length,
+    0,
+  );
+  const sinBot = filas.length - clientesConBot;
   const tasaExito = metrics.total > 0 ? ((metrics.referidos_ok / metrics.total) * 100).toFixed(1) : "0.0";
   const sinBots = !esAdmin && tenants.length === 0;
 
@@ -269,7 +312,7 @@ export default async function Home({
             {esAdmin ? "Resumen Operativo" : "Tu Resumen"}
           </h1>
           <p className="mt-0.5 text-sm text-ink-soft">
-            Visión global de clientes y canales conversacionales (WhatsApp &amp; Telegram).
+            Visión global de clientes y sus bots de Telegram.
           </p>
         </div>
         {todas.length > 1 && (
@@ -299,8 +342,8 @@ export default async function Home({
         />
         <Kpi
           titulo="Clientes Activos"
-          valor={filas.length}
-          pie={`${botsActivos} bots en operación`}
+          valor={clientesConBot}
+          pie={`${botsActivos} bots en operación · ${filas.length} clientes`}
           Icono={IconoEdificio}
           iconoColor="text-signal"
         />
@@ -322,12 +365,14 @@ export default async function Home({
       </div>
 
       {/* Estado de Clientes & Bots */}
-      <div className={`${CARD} overflow-hidden`}>
+      <div className={`${CARD} shrink-0 overflow-hidden`}>
         <div className="flex items-center justify-between gap-3 border-b border-line/50 px-6 py-4">
           <div>
             <h2 className="text-base font-semibold text-brand">Estado de Clientes &amp; Bots</h2>
             <p className="mt-0.5 text-xs text-ink-soft">
-              Cada cliente opera con un bot de WhatsApp y un bot de Telegram dedicados.
+              {filas.length} cliente{filas.length === 1 ? "" : "s"}
+              {sinBot > 0 ? ` · ${sinBot} sin bot de Telegram` : ""}.
+              Aparecen todos, tengan o no canal conectado.
             </p>
           </div>
           {esAdmin && PANEL_ADMIN_CLIENTES_BOTS && (

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/session";
-import { getMetrics, cargarOpcionesVista } from "@/lib/api";
+import { cargarOpcionesVista, getCredits, getNotifications, type TenantCredits } from "@/lib/api";
 import { IconoCamion } from "@/lib/icons";
 import { NavLateral } from "./NavLateral";
 import { SseRefresh } from "@/components/SseRefresh";
 import { BannerImpersonacion } from "@/components/BannerImpersonacion";
+import { BannerCreditos } from "@/components/BannerCreditos";
 import { PieSesion } from "@/components/PieSesion";
 
 export const dynamic = "force-dynamic";
@@ -15,19 +16,23 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const esAdmin = user.role === "admin";
   const mostrarSwitchVista = esAdmin || impersonation != null;
 
-  // Solo para el contador de la nav. Si el core no responde, la nav se dibuja
-  // sin badge en vez de tumbar el panel entero: el error real ya lo muestra
-  // la pagina de adentro, con su explicacion.
-  let candidatos: number | null = null;
-  try {
-    candidatos = (await getMetrics()).total;
-  } catch {
-    candidatos = null;
-  }
-
   let vistaUsuarios = null;
   if (mostrarSwitchVista) {
     vistaUsuarios = await cargarOpcionesVista(session);
+  }
+
+  let alertasCreditos: TenantCredits[] = [];
+  try {
+    alertasCreditos = (await getCredits()).alertas;
+  } catch {
+    alertasCreditos = [];
+  }
+
+  let noLeidas = 0;
+  try {
+    noLeidas = (await getNotifications()).unread;
+  } catch {
+    noLeidas = 0;
   }
 
   const subtituloSesion = impersonation
@@ -39,8 +44,8 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   return (
     // tema-fijo: el design system (DESIGN.md) no define paleta oscura, asi que
     // la consola se ve igual sin importar el tema del sistema operativo.
-    <div className="tema-fijo flex min-h-screen flex-col bg-paper md:flex-row">
-      <SseRefresh />
+    <div className="tema-fijo flex min-h-dvh flex-col bg-paper md:h-dvh md:flex-row md:overflow-hidden">
+      <SseRefresh userId={user.id} />
       <a
         href="#contenido"
         className="saltar-al-contenido rounded-control bg-brand px-3 py-2 text-sm text-white"
@@ -48,7 +53,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         Saltar al contenido
       </a>
 
-      <aside className="z-10 flex shrink-0 flex-col justify-between border-b border-line bg-surface md:sticky md:top-0 md:h-screen md:w-64 md:border-b-0 md:border-r">
+      <aside className="z-10 flex shrink-0 flex-col justify-between border-b border-line bg-surface md:h-dvh md:w-64 md:border-b-0 md:border-r">
         <div className="flex flex-col">
           <Link
             href="/"
@@ -69,7 +74,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </Link>
 
           <div className="p-4">
-            <NavLateral esAdmin={esAdmin} candidatos={candidatos} bots={tenants.length} />
+            <NavLateral esAdmin={esAdmin} bots={tenants.length} noLeidas={noLeidas} />
           </div>
         </div>
 
@@ -85,9 +90,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
       <main
         id="contenido"
-        className="flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-8 overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 lg:h-screen lg:max-h-[100dvh] lg:min-h-0"
+        className="flex w-full min-w-0 flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 md:min-h-0 [&>*:not([data-fill-panel])]:shrink-0"
       >
         {impersonation && <BannerImpersonacion user={user} impersonation={impersonation} />}
+        {!esAdmin && <BannerCreditos alertas={alertasCreditos} />}
         {children}
       </main>
     </div>

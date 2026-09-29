@@ -5,6 +5,10 @@ Stack: Next.js 16 · pnpm · Node 20+
 
 El panel **no llama al core desde el navegador**. Las Server Actions y Route Handlers en Vercel hablan con el backend usando `CORE_API_URL`. La cookie de sesión (`ups_session`) queda en el dominio de Vercel.
 
+> **Producción:** el core ya está desplegado en AWS.
+> `CORE_API_URL` = **`https://api.referidosops.com`** (sin barra final).
+> Paso a paso y solución de problemas: **[conexion-core-produccion.md](conexion-core-produccion.md)**.
+
 ---
 
 ## Requisito previo (importante)
@@ -14,7 +18,7 @@ Vercel debe poder alcanzar el core por **HTTPS público**.
 
 Opciones:
 
-1. **Recomendado:** desplegar primero el core en AWS (o un VPS) y usar algo como `https://api.tudominio.com`.
+1. **Recomendado (hecho):** el core está en AWS en `https://api.referidosops.com`.
 2. **Prueba temporal:** túnel (Cloudflare Tunnel, ngrok) apuntando al API local — solo para validar el flujo, no para producción.
 
 ---
@@ -122,24 +126,22 @@ En el proyecto: **Settings → Environment Variables**
 
 | Nombre | Valor | Entornos |
 |--------|--------|----------|
-| `CORE_API_URL` | URL pública del core, ej. `https://api.tudominio.com` | Production, Preview, Development |
+| `CORE_API_URL` | `https://api.referidosops.com` (**sin** `/` al final) | Production, Preview, Development |
 
 No hace falta `NEXT_PUBLIC_*`: nada sensible va al bundle del cliente para el core.
 
-Tras guardar, **Redeploy** (Deployments → … → Redeploy) para que el build tome la variable.
+Tras guardar, **Redeploy** (Deployments → … → Redeploy): Vercel fija las variables al crear cada deployment. Marcá también **Preview**, o las URLs de cada push siguen apuntando a `localhost`.
 
 ---
 
-## Paso 5 — Backend cuando el core ya esté en la nube
+## Paso 5 — Lado del core (ya resuelto)
 
-En el `.env` del **core** (AWS), conviene:
+En AWS el core **no usa `.env`**: su configuración vive en SSM Parameter Store y ya está
+cargada (`JWT_SECRET` propio de producción; `API_ALLOWED_ORIGINS` con
+`https://panel.referidosops.com` y `https://ups-control-dashboard-ups-team1.vercel.app`).
 
-```env
-JWT_SECRET=<mismo valor fuerte en prod>
-API_ALLOWED_ORIGINS=https://tu-panel.vercel.app,https://tu-dominio-custom.com
-```
-
-El panel hoy consume el API **desde el servidor de Next**, así que CORS casi no afecta el flujo normal; igual conviene dejar el origen del panel por si más adelante hay llamadas desde el browser.
+El panel consume la API **desde el servidor de Next**, así que CORS no bloquea las URLs de
+preview de Vercel aunque no estén en esa lista. Para cambiarla: `ups-core-backend/docs/despliegue-aws.md`.
 
 ---
 
@@ -152,7 +154,7 @@ El panel hoy consume el API **desde el servidor de Next**, así que CORS casi no
 Si el login falla con error de conexión:
 
 - Revisa que `CORE_API_URL` no tenga barra final extra rara (`https://api.com` sin `/` al final está bien).
-- Comprueba que el API responda desde fuera: `curl https://api.tudominio.com/health` (o el endpoint de salud que tengáis).
+- Comprueba que el API responda desde fuera: `curl https://api.referidosops.com/api/health` → `{"status":"ok"}`.
 - En Vercel → **Deployments → Functions / Logs**, busca `502` o `No se pudo conectar con el core`.
 
 ---
@@ -183,18 +185,18 @@ El repo incluye `vercel.json` con `"framework": "nextjs"` para que Git no trate 
 
 ## Dominio propio (opcional)
 
-**Project Settings → Domains** → añade `panel.tudominio.com` y configura el CNAME que indique Vercel.
+**Project Settings → Domains** → añade `panel.referidosops.com` y crea en Route 53 el CNAME que indique Vercel. Comando exacto en [conexion-core-produccion.md](conexion-core-produccion.md#dominio-propio-panelreferidosopscom).
 
 ---
 
 ## Resumen de arquitectura
 
 ```
-Usuario → https://panel.vercel.app (Next.js)
-              ↓ server-side fetch
-         https://api.tudominio.com (FastAPI en AWS)
+Usuario → https://ups-control-dashboard-ups-team1.vercel.app  (o panel.referidosops.com)
+              ↓ server-side fetch (CORE_API_URL)
+         https://api.referidosops.com  (Caddy + FastAPI en EC2, AWS us-east-1)
               ↓
-         Postgres / Redis / workers
+         RDS Postgres / Redis / workers por cliente
 ```
 
 Cookies de sesión: dominio Vercel · JWT emitido por el core · `secure: true` en producción.

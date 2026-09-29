@@ -8,6 +8,7 @@ import {
   type ReferralStatus,
 } from "@/lib/api";
 import { requireSession } from "@/lib/session";
+import { AvisoServicioIndisponible } from "@/components/AvisoServicioIndisponible";
 import { Aviso, Estado } from "@/components/ui";
 import { IconoOrden } from "@/lib/icons";
 import { Buscador } from "./Buscador";
@@ -42,15 +43,8 @@ const ORDENES = {
 type Orden = keyof typeof ORDENES;
 const esOrden = (v: string): v is Orden => v in ORDENES;
 
-function AvisoCore({ mensaje }: { mensaje: string }) {
-  return (
-    <Aviso tono="bad" titulo="No se pudo leer el core">
-      <p>{mensaje}</p>
-      <p className="mt-2 overflow-x-auto whitespace-nowrap rounded-control bg-sunk px-2 py-1.5 text-xs text-ink-faint">
-        venv/Scripts/python.exe -m uvicorn app.api.main:app --port 8090
-      </p>
-    </Aviso>
-  );
+function AvisoCore() {
+  return <AvisoServicioIndisponible from="/candidatos" />;
 }
 
 function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => string }) {
@@ -296,7 +290,7 @@ export default async function Panel({
     ]);
   } catch (error) {
     return (
-      <AvisoCore mensaje={error instanceof CoreApiError ? error.message : "Error inesperado."} />
+      <AvisoCore />
     );
   }
 

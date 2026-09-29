@@ -3,9 +3,15 @@
  * sesion vive en una cookie httpOnly y nunca lo toca el navegador.
  */
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 
-const BASE_URL = process.env.CORE_API_URL ?? "http://localhost:8090";
+function coreBaseUrl(): string {
+  const raw = process.env.CORE_API_URL ?? "http://localhost:8090";
+  return raw.trim().replace(/\/$/, "");
+}
+
+const BASE_URL = coreBaseUrl();
 
 export const SESSION_COOKIE = "ups_session";
 
@@ -23,6 +29,7 @@ export type SessionUser = {
   email: string;
   name: string | null;
   role: Role;
+  must_change_password?: boolean;
 };
 
 export type Impersonation = {
@@ -164,22 +171,45 @@ export type Message = {
   direction: "in" | "out";
   text: string;
   created_at: string;
+  /** Trae imagen adjunta (captura del referido): se pide a /api/media/{id}. */
+  has_media?: boolean;
 };
 
 export type ImprovementCase = {
   id: string;
   tenant_id: string;
   tenant_name: string | null;
-  candidate_id: string;
-  message_id: number;
+  candidate_id: string | null;
+  message_id: number | null;
   message_direction: "in" | "out";
   anchor_text: string;
   guidance: string;
+  title: string | null;
+  kind?: "rule" | "correction";
+  candidate_name?: string | null;
   active: boolean;
+  published: boolean;
+  is_global: boolean;
+  tested_in_playground_at: string | null;
   created_by: string;
   created_by_email: string | null;
   created_by_name: string | null;
   created_at: string | null;
+};
+
+export type PlaygroundMessage = {
+  id: number;
+  direction: "in" | "out";
+  text: string;
+  created_at: string | null;
+};
+
+export type PlaygroundTurn = {
+  session_id: string;
+  reply_text: string;
+  message_id: number;
+  tested_case_ids: string[];
+  messages: PlaygroundMessage[];
 };
 
 export type ConversationChannelView = {
@@ -278,13 +308,45 @@ export function login(email: string, password: string) {
   );
 }
 
-export const getSession = async (): Promise<Session> => {
-  const data = await request<Session & { impersonation?: Impersonation | null }>("/api/me");
+export function changePassword(currentPassword: string, newPassword: string) {
+  return request<AuthExchange>("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+}
+
+function normalizarSesion(
+  data: Session & { impersonation?: Impersonation | null },
+): Session {
   return {
     ...data,
     impersonation: data.impersonation ?? null,
   };
-};
+}
+
+/** Una sola llamada a /api/me por request (layout + página comparten cache). */
+export const getSession = cache(async (): Promise<Session> => {
+  let ultimo: unknown;
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      const data = await request<Session & { impersonation?: Impersonation | null }>("/api/me");
+      return normalizarSesion(data);
+    } catch (error) {
+      ultimo = error;
+      const reintentar =
+        error instanceof CoreApiError &&
+        error.status != null &&
+        error.status >= 500 &&
+        intento === 0;
+      if (!reintentar) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+  }
+  throw ultimo;
+});
 
 export const impersonateUser = (userId: string) =>
   request<AuthExchange>(`/api/admin/users/${userId}/impersonate`, { method: "POST" });
@@ -359,6 +421,57 @@ export function getMetrics(dias = 3, tenantId?: string) {
   return request<Metrics>(`/api/metrics?${params}`);
 }
 
+export type TenantCredits = {
+  tenant_id: string;
+  slug?: string | null;
+  name?: string | null;
+  remaining_usd: number | null;
+  limit_usd: number | null;
+  threshold_usd: number;
+  nivel: "ok" | "bajo" | "agotado" | "desconocido";
+  alerta: boolean;
+};
+
+export type CreditsSnapshot = {
+  threshold_usd: number;
+  tenants: TenantCredits[];
+  alertas: TenantCredits[];
+};
+
+/** Una sola ida al core por request de React (layout + Home). */
+export const getCredits = cache(() => request<CreditsSnapshot>("/api/credits"));
+
+export type ItemReporte = { nombre: string; cantidad: number };
+
+export type Reportes = {
+  iniciados: number;
+  datos_completos: number;
+  referidos: number;
+  fallidos: number;
+  en_espera: number;
+  reactivados_por_vacante: number;
+  tiempo_promedio_seg: number | null;
+  top_trabajos: ItemReporte[];
+  top_estados: ItemReporte[];
+};
+
+export function getReports(
+  filtros: {
+    tenantId?: string;
+    since?: string;
+    until?: string;
+    referralStatus?: ReferralStatus;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (filtros.tenantId) params.set("tenant_id", filtros.tenantId);
+  if (filtros.since) params.set("since", filtros.since);
+  if (filtros.until) params.set("until", filtros.until);
+  if (filtros.referralStatus) params.set("referral_status", filtros.referralStatus);
+  const q = params.toString();
+  return request<Reportes>(q ? `/api/reports?${q}` : "/api/reports");
+}
+
 export function listCandidates(
   filtros: { referralStatus?: ReferralStatus; tenantId?: string; q?: string } = {},
   limit = 50,
@@ -403,6 +516,54 @@ export const setImprovementCaseActive = (
     body: JSON.stringify({ active }),
   });
 
+export const listTenantImprovementCases = (tenantId: string) =>
+  request<ImprovementCase[]>(`/api/tenants/${tenantId}/improvements`);
+
+export const createTenantImprovementCase = (
+  tenantId: string,
+  body: { guidance: string; title?: string; is_global?: boolean },
+) =>
+  request<ImprovementCase>(`/api/tenants/${tenantId}/improvements`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+export const patchTenantImprovementCase = (
+  tenantId: string,
+  caseId: string,
+  body: {
+    guidance?: string;
+    title?: string;
+    active?: boolean;
+    published?: boolean;
+    is_global?: boolean;
+  },
+) =>
+  request<ImprovementCase>(`/api/tenants/${tenantId}/improvements/${caseId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
+export const playgroundTurn = (
+  tenantId: string,
+  body: {
+    message: string;
+    session_id?: string;
+    candidate_snapshot?: { first_name?: string; zip?: string };
+  },
+) =>
+  request<PlaygroundTurn>(`/api/tenants/${tenantId}/playground/turn`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+/** Encola el re-login de UPS de este cliente. El token nuevo llega cuando termina el job. */
+export const renewTenantSession = (tenantId: string) =>
+  request<{ ok: boolean; queued: boolean; tenant_id: string }>(
+    `/api/tenants/${tenantId}/session/renew`,
+    { method: "POST" },
+  );
+
 // --- Administracion ---
 
 export const listUsers = () => request<AdminUser[]>("/api/admin/users");
@@ -434,4 +595,92 @@ export const assignTenants = (userId: string, tenantIds: string[]) =>
   request<unknown>(`/api/admin/users/${userId}/tenants`, {
     method: "PUT",
     body: JSON.stringify({ tenant_ids: tenantIds }),
+  });
+
+export type OpsThread = {
+  id: string;
+  title: string;
+  last_text?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type OpsMessage = {
+  id: number;
+  author: "user" | "agent";
+  text: string;
+  created_at: string | null;
+};
+
+export type OpsToolRun = {
+  id: string;
+  tool: string;
+  arguments: { _texto?: string } & Record<string, unknown>;
+  status: string;
+  result: unknown;
+  created_at: string | null;
+};
+
+export type OpsThreadDetail = OpsThread & {
+  messages: OpsMessage[];
+  pending: OpsToolRun[];
+};
+
+export const listOpsThreads = () => request<OpsThread[]>("/api/ops/threads");
+
+export const createOpsThread = (title = "Nuevo chat") =>
+  request<OpsThread>("/api/ops/threads", {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+
+export const startOpsThread = (text: string) =>
+  request<OpsThread & { message: OpsMessage }>("/api/ops/threads/start", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+
+export const deleteOpsThread = (id: string) =>
+  request<{ ok: boolean }>(`/api/ops/threads/${id}`, { method: "DELETE" });
+
+export const getOpsThread = (id: string) =>
+  request<OpsThreadDetail>(`/api/ops/threads/${id}`);
+
+export const postOpsMessage = (id: string, text: string) =>
+  request<OpsMessage>(`/api/ops/threads/${id}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+
+export const confirmOpsTool = (threadId: string, runId: string) =>
+  request<{ ok: boolean; status: string }>(
+    `/api/ops/threads/${threadId}/tools/${runId}/confirm`,
+    { method: "POST" },
+  );
+
+export const rejectOpsTool = (threadId: string, runId: string) =>
+  request<{ ok: boolean; status: string }>(
+    `/api/ops/threads/${threadId}/tools/${runId}/reject`,
+    { method: "POST" },
+  );
+
+export type Notificacion = {
+  id: number;
+  tenant_id: string;
+  tenant_name: string | null;
+  kind: "credits_low" | "credits_depleted" | "credits_recharged" | "referral_success";
+  title: string;
+  body: string;
+  created_at: string;
+  unread: boolean;
+};
+
+export type NotificacionesSnapshot = { items: Notificacion[]; unread: number };
+
+export const getNotifications = cache(() => request<NotificacionesSnapshot>("/api/notifications"));
+
+export const markNotificationsRead = (ids?: number[]) =>
+  request<{ ok: boolean }>("/api/notifications/read", {
+    method: "POST",
+    body: JSON.stringify({ ids: ids ?? null }),
   });

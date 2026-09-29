@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const PILARES = [
   {
     Icono: IconoConversacion,
-    titulo: "Supervisión en tiempo real de WhatsApp y Telegram",
+    titulo: "Supervisión en tiempo real de Telegram",
     detalle:
       "Auditoría continua de interacciones y derivación transparente de candidatos.",
   },

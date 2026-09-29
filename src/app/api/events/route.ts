@@ -14,7 +14,7 @@ export async function GET() {
     return new Response("No autenticado", { status: 401 });
   }
 
-  const base = process.env.CORE_API_URL ?? "http://localhost:8090";
+  const base = (process.env.CORE_API_URL ?? "http://localhost:8090").trim().replace(/\/$/, "");
   let upstream: Response;
   try {
     upstream = await fetch(`${base}/api/events/stream`, {
@@ -32,12 +32,28 @@ export async function GET() {
     return new Response(upstream.statusText || "Error del core", { status: upstream.status });
   }
 
-  return new Response(upstream.body, {
+  const reader = upstream.body.getReader();
+  const stream = new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(value);
+    },
+    cancel() {
+      void reader.cancel();
+    },
+  });
+
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
+      "Content-Encoding": "identity",
     },
   });
 }

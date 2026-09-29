@@ -19,8 +19,11 @@ export async function iniciarSesion(
   }
 
   let token: string;
+  let mustChange = false;
   try {
-    ({ token } = await login(email, password));
+    const data = await login(email, password);
+    token = data.token;
+    mustChange = Boolean(data.user.must_change_password);
   } catch (error) {
     if (error instanceof CoreApiError) return { error: error.message };
     return { error: "No se pudo iniciar sesion." };
@@ -42,7 +45,7 @@ export async function iniciarSesion(
     ...(recordar ? { maxAge: 60 * 60 * 12 } : {}),
   });
 
-  redirect("/");
+  redirect(mustChange ? "/cambiar-contrasena" : "/");
 }
 
 export async function cerrarSesion() {

@@ -60,7 +60,12 @@ export default async function CandidatoResumenPage({
 
       <FichaCandidato c={c} />
 
-      <ReglasMejora candidateId={id} tenantName={tenantName} casos={casos} />
+      <ReglasMejora
+        candidateId={id}
+        tenantId={c.tenant_id}
+        tenantName={tenantName}
+        casos={casos}
+      />
     </div>
   );
 }

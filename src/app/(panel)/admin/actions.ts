@@ -6,6 +6,7 @@ import {
   CoreApiError,
   createUser,
   deleteTenant,
+  renewTenantSession,
   setTenantActive,
   type Role,
 } from "@/lib/api";
@@ -80,4 +81,19 @@ export async function borrarBot(tenantId: string): Promise<{ error: string | nul
   }
   revalidatePath("/admin");
   return { error: null };
+}
+
+export async function renovarSesionBot(tenantId: string): Promise<{ error: string | null; ok: string | null }> {
+  try {
+    await renewTenantSession(tenantId);
+  } catch (error) {
+    return {
+      error: error instanceof CoreApiError ? error.message : "No se pudo encolar el re-login.",
+      ok: null,
+    };
+  }
+  return {
+    error: null,
+    ok: "Re-login encolado. El token nuevo llega en unos minutos (UPS pide OTP).",
+  };
 }

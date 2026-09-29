@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconoCandidatos, IconoEdificio, IconoPanel } from "@/lib/icons";
+import { IconoBuscar, IconoCampana, IconoCandidatos, IconoConfiguracion, IconoEdificio, IconoPanel, IconoReportes } from "@/lib/icons";
 import { PANEL_ADMIN_CLIENTES_BOTS } from "@/lib/features";
 
 type Modulo = {
@@ -16,23 +16,47 @@ type Modulo = {
 
 export function NavLateral({
   esAdmin,
-  candidatos,
   bots,
+  noLeidas = 0,
 }: {
   esAdmin: boolean;
-  candidatos: number | null;
   bots: number;
+  noLeidas?: number;
 }) {
   const pathname = usePathname();
 
   const modulos: Modulo[] = [
-    { href: "/", label: "Home Resumen", Icono: IconoPanel, soloAdmin: false },
+    { href: "/", label: "Home", Icono: IconoPanel, soloAdmin: false },
     {
       href: "/candidatos",
       label: "Candidatos",
       Icono: IconoCandidatos,
       soloAdmin: false,
-      contador: candidatos,
+    },
+    {
+      href: "/reportes",
+      label: "Reportes",
+      Icono: IconoReportes,
+      soloAdmin: false,
+    },
+    {
+      href: "/asistente",
+      label: "Asistente",
+      Icono: IconoBuscar,
+      soloAdmin: false,
+    },
+    {
+      href: "/notificaciones",
+      label: "Notificaciones",
+      Icono: IconoCampana,
+      soloAdmin: false,
+      contador: noLeidas > 0 ? noLeidas : null,
+    },
+    {
+      href: "/configuracion",
+      label: "Configuración",
+      Icono: IconoConfiguracion,
+      soloAdmin: false,
     },
     {
       href: "/admin",

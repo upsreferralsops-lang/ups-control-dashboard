@@ -26,6 +26,8 @@ Guía paso a paso: **[docs/conexion-core-produccion.md](docs/conexion-core-produ
 
 Índice de documentación: **[docs/README.md](docs/README.md)**.
 
+**Skills de UI en Cursor:** [.cursor/skills/](.cursor/skills/) (índice `design-workflow-cursor`).
+
 ## Desarrollo local
 
 ### Requisitos
@@ -42,7 +44,17 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Panel en http://localhost:3000
+Panel contra el core local en http://localhost:3000.
+
+Para desarrollar el panel apuntando al core en **AWS** (sin levantar el backend en tu máquina):
+
+```bash
+pnpm dev:aws
+```
+
+Usa `CORE_API_URL` de [`.env.aws`](.env.aws) (`https://api.referidosops.com`) vía [`scripts/dev-aws.mjs`](scripts/dev-aws.mjs); tu `.env.local` sigue valiendo para `pnpm dev`.
+
+Solo puede haber **un** `next dev` por carpeta del proyecto. `dev:aws` **detiene** el servidor dev anterior si sigue activo (por ejemplo dejó `pnpm dev` en otra terminal). Para apagarlo sin arrancar otro: `pnpm dev:stop`.
 
 ### Variables (local)
 
@@ -67,7 +79,9 @@ Si el core no responde, el panel avisa en pantalla en vez de romperse.
 
 | Comando | Qué hace |
 |---|---|
-| `pnpm dev` | Servidor de desarrollo |
+| `pnpm dev` | Servidor de desarrollo (core local vía `.env.local`) |
+| `pnpm dev:aws` | Servidor de desarrollo contra `https://api.referidosops.com` (reemplaza otro `next dev` del mismo repo) |
+| `pnpm dev:stop` | Detiene el `next dev` registrado en `.next/dev/lock` |
 | `pnpm build` | Build de producción |
 | `pnpm start` | Sirve el build |
 | `pnpm lint` | ESLint |

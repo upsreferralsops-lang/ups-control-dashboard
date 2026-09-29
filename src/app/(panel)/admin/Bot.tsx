@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import type { AdminTenant } from "@/lib/api";
 import { Aviso, Boton, Etiqueta } from "@/components/ui";
-import { borrarBot, cambiarEstadoBot } from "./actions";
+import { borrarBot, cambiarEstadoBot, renovarSesionBot } from "./actions";
+import { MOSTRAR_CANAL } from "@/lib/canales";
 
 /**
  * Tarjeta de un bot con estados canónicos: activo, de baja, eliminable.
@@ -15,6 +16,7 @@ export function Bot({ bot, parte }: { bot: AdminTenant; parte: number }) {
   const [pendiente, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const sinUso = bot.candidatos === 0;
   const pct = Math.round(parte);
@@ -34,7 +36,7 @@ export function Bot({ bot, parte }: { bot: AdminTenant; parte: number }) {
             {bot.bot_handle ?? bot.slug}
           </p>
         </div>
-        <Etiqueta>{bot.channel}</Etiqueta>
+        {MOSTRAR_CANAL && <Etiqueta>{bot.channel}</Etiqueta>}
       </div>
 
       {bot.active ? (
@@ -77,6 +79,22 @@ export function Bot({ bot, parte }: { bot: AdminTenant; parte: number }) {
           }
         >
           {bot.active ? "Dar de baja" : "Reactivar"}
+        </Boton>
+        <Boton
+          disabled={pendiente}
+          className="min-h-8 px-2.5 py-1 text-xs"
+          title="Re-login UPS para obtener un token de sesión nuevo"
+          onClick={() =>
+            iniciar(async () => {
+              setError(null);
+              setAviso(null);
+              const r = await renovarSesionBot(bot.id);
+              setError(r.error);
+              setAviso(r.ok);
+            })
+          }
+        >
+          Renovar sesión
         </Boton>
 
         {sinUso &&
@@ -132,6 +150,11 @@ export function Bot({ bot, parte }: { bot: AdminTenant; parte: number }) {
         </p>
       )}
 
+      {aviso && (
+        <div className="mt-2">
+          <Aviso tono="ok">{aviso}</Aviso>
+        </div>
+      )}
       {error && (
         <div className="mt-2">
           <Aviso tono="bad">{error}</Aviso>

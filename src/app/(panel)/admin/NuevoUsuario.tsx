@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { MOSTRAR_CANAL } from "@/lib/canales";
 import type { AdminTenant, Role } from "@/lib/api";
 import { Aviso, Boton, CAMPO, Etiqueta } from "@/components/ui";
 import { crearUsuario, type AdminState } from "./actions";
@@ -138,7 +139,7 @@ export function NuevoUsuario({ bots }: { bots: AdminTenant[] }) {
                       className="h-3.5 w-3.5 accent-[var(--signal)]"
                     />
                     <span className={b.active ? "" : "text-ink-soft"}>{b.name}</span>
-                    <Etiqueta>{b.active ? b.channel : "de baja"}</Etiqueta>
+                    <Etiqueta>{b.active ? (MOSTRAR_CANAL ? b.channel : "activo") : "de baja"}</Etiqueta>
                   </label>
                 ))}
               </div>

@@ -1,11 +1,54 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { Message } from "@/lib/api";
 import { timeAgo } from "@/lib/status";
 import { Bloque, Boton, CAMPO } from "@/components/ui";
 import { IconoBuscar, IconoCerrar } from "@/lib/icons";
-import { crearMejora } from "./actions";
+import { crearMejora, leerConversacion } from "./actions";
+
+const CAPTION_CAPTURA = "Captura del referido / apply en UPS";
+
+function mensajeConCaptura(m: Message): m is Message & { id: number | string } {
+  if (m.id == null || m.id === "") return false;
+  if (m.has_media) return true;
+  return (m.text ?? "").trim() === CAPTION_CAPTURA;
+}
+
+function CapturaAdjunta({ messageId }: { messageId: number | string }) {
+  const [fallo, setFallo] = useState(false);
+  const src = `/api/media/${messageId}`;
+  if (fallo) {
+    return (
+      <p className="mb-2 text-xs text-bad">
+        No se pudo cargar la captura.{" "}
+        <a href={src} target="_blank" rel="noopener noreferrer" className="underline">
+          Abrir enlace directo
+        </a>
+      </p>
+    );
+  }
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mb-2 block"
+      title="Abrir captura en tamaño completo"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt="Captura del formulario de referido"
+        loading="lazy"
+        decoding="async"
+        className="max-h-80 w-auto rounded-control border border-line bg-surface"
+        onError={() => setFallo(true)}
+      />
+    </a>
+  );
+}
 
 function normalizar(texto: string): string {
   return texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -89,19 +132,28 @@ function marcarTexto(
   return { nodos: partes.length ? partes : texto, siguienteIndice: glob };
 }
 
+function firmaChat(msgs: Message[]): string {
+  const last = msgs.at(-1);
+  return `${msgs.length}:${last?.id ?? ""}:${last?.created_at ?? ""}`;
+}
+
 export function ConversacionPanel({
   conversation,
   candidateId,
   tenantName,
   focusMessageId,
   canalLabel,
+  canal,
 }: {
   conversation: Message[];
   candidateId: string;
   tenantName: string;
   focusMessageId?: number;
   canalLabel?: string;
+  canal?: "telegram" | "whatsapp";
 }) {
+  const router = useRouter();
+  const [msgs, setMsgs] = useState(conversation);
   const [consulta, setConsulta] = useState("");
   const [activo, setActivo] = useState(0);
   const [marcando, setMarcando] = useState(false);
@@ -110,6 +162,36 @@ export function ConversacionPanel({
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
+  const firmaRef = useRef(firmaChat(conversation));
+
+  useEffect(() => {
+    const next = firmaChat(conversation);
+    if (next === firmaRef.current) return;
+    firmaRef.current = next;
+    setMsgs(conversation);
+  }, [conversation]);
+
+  // Si el SSE no llega (proxy, pestaña, Redis), el chat igual se pone al día.
+  useEffect(() => {
+    let cancelado = false;
+    const tick = async () => {
+      if (document.visibilityState === "hidden") return;
+      const result = await leerConversacion(candidateId, canal);
+      if (cancelado || !result.ok) return;
+      const next = firmaChat(result.messages);
+      if (next === firmaRef.current) return;
+      firmaRef.current = next;
+      setMsgs(result.messages);
+      router.refresh();
+    };
+    const id = window.setInterval(() => {
+      void tick();
+    }, 2000);
+    return () => {
+      cancelado = true;
+      window.clearInterval(id);
+    };
+  }, [candidateId, canal, router]);
 
   const q = consulta.trim();
   const buscando = q.length > 0;
@@ -127,7 +209,7 @@ export function ConversacionPanel({
     // Doble frame: el alto flex a veces se resuelve un tick despues.
     const id = requestAnimationFrame(() => requestAnimationFrame(irAlFinal));
     return () => cancelAnimationFrame(id);
-  }, [conversation, buscando, focusMessageId]);
+  }, [msgs, buscando, focusMessageId]);
 
   // Desde «Ver» en reglas de mejora: ir al mensaje anclado.
   useEffect(() => {
@@ -147,12 +229,12 @@ export function ConversacionPanel({
       cancelAnimationFrame(id);
       window.clearTimeout(t);
     };
-  }, [focusMessageId, conversation, buscando]);
+  }, [focusMessageId, msgs, buscando]);
 
   const totalCoincidencias = useMemo(() => {
     if (!buscando) return 0;
-    return conversation.reduce((acc, m) => acc + contarCoincidencias(m.text, q), 0);
-  }, [conversation, buscando, q]);
+    return msgs.reduce((acc, m) => acc + contarCoincidencias(m.text, q), 0);
+  }, [msgs, buscando, q]);
 
   // activo=0 → coincidencia mas reciente (abajo del chat); luego se sube.
   const indiceDomActivo =
@@ -181,8 +263,8 @@ export function ConversacionPanel({
 
   const mensajesConCoincidencia = useMemo(() => {
     if (!buscando) return 0;
-    return conversation.filter((m) => contarCoincidencias(m.text, q) > 0).length;
-  }, [conversation, buscando, q]);
+    return msgs.filter((m) => contarCoincidencias(m.text, q) > 0).length;
+  }, [msgs, buscando, q]);
 
   function cancelarMarcado() {
     setMarcando(false);
@@ -216,9 +298,9 @@ export function ConversacionPanel({
           <span className="text-xs tabular-nums text-ink-faint">
             {buscando
               ? totalCoincidencias === 0
-                ? `0 coincidencias · ${conversation.length} mensajes`
+                ? `0 coincidencias · ${msgs.length} mensajes`
                 : `${totalCoincidencias} coincidencia${totalCoincidencias === 1 ? "" : "s"} · ${mensajesConCoincidencia} mensaje${mensajesConCoincidencia === 1 ? "" : "s"}`
-              : `${conversation.length} mensajes · ${timeAgo(conversation.at(-1)?.created_at ?? null)}`}
+              : `${msgs.length} mensajes · ${timeAgo(msgs.at(-1)?.created_at ?? null)}`}
           </span>
           <Boton
             type="button"
@@ -309,20 +391,20 @@ export function ConversacionPanel({
       </div>
 
       <div ref={listaRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
-        {conversation.length === 0 && (
+        {msgs.length === 0 && (
           <p className="py-8 text-center text-sm text-ink-soft">Todavía no hay mensajes.</p>
         )}
-        {conversation.length > 0 && buscando && totalCoincidencias === 0 && (
+        {msgs.length > 0 && buscando && totalCoincidencias === 0 && (
           <p className="shrink-0 rounded-control border border-line bg-sunk px-3 py-2 text-center text-xs text-ink-soft">
             Ningún mensaje coincide con «{q}»; se muestra la conversación completa.
           </p>
         )}
-        {conversation.map((m, msgIdx) => {
+        {msgs.map((m, msgIdx) => {
           const entrante = m.direction === "in";
           let indiceMarcas = 0;
           if (buscando) {
             for (let j = 0; j < msgIdx; j++) {
-              indiceMarcas += contarCoincidencias(conversation[j].text, q);
+              indiceMarcas += contarCoincidencias(msgs[j].text, q);
             }
           }
           const { nodos } = buscando
@@ -343,6 +425,11 @@ export function ConversacionPanel({
                 marcando ? "cursor-pointer hover:ring-1 hover:ring-signal/50" : ""
               }`}
             >
+              {mensajeConCaptura(m) && (
+                <div onClick={(e) => marcando && e.preventDefault()}>
+                  <CapturaAdjunta messageId={m.id} />
+                </div>
+              )}
               <p className="whitespace-pre-wrap break-words">{nodos}</p>
             </div>
           );
@@ -397,8 +484,9 @@ export function ConversacionPanel({
             disabled={pendiente}
           />
           <p className="text-[11px] text-ink-faint">
-            Se guarda como regla del cliente <strong className="text-ink-soft">{tenantName}</strong>.
-            No afecta a otros bots.
+            El bot le escribe ahora a este candidato. No se guarda como regla del
+            bot de <strong className="text-ink-soft">{tenantName}</strong> ni se
+            reutiliza en otros chats.
           </p>
           {error && <p className="text-xs text-bad">{error}</p>}
           <div className="flex gap-2">

@@ -4,6 +4,7 @@ import { IconoVolver } from "@/lib/icons";
 import { fullName, presentacionReferido } from "@/lib/status";
 import { Estado, Etiqueta } from "@/components/ui";
 import { CandidatoSubnav } from "./CandidatoSubnav";
+import { MOSTRAR_CANAL } from "@/lib/canales";
 
 export function CandidatoEncabezado({
   candidateId,
@@ -27,7 +28,7 @@ export function CandidatoEncabezado({
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">{fullName(candidate)}</h1>
         <Estado status={candidate.referral_status} candidate={candidate} className="text-sm" />
-        <Etiqueta>{candidate.channel}</Etiqueta>
+        {MOSTRAR_CANAL && <Etiqueta>{candidate.channel}</Etiqueta>}
         {candidate.tenant_name && <Etiqueta>{candidate.tenant_name}</Etiqueta>}
       </div>
       <p className="mt-1.5 max-w-prose text-sm text-ink-soft">{estado.help}</p>

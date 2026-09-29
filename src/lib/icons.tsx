@@ -277,6 +277,15 @@ export function IconoEnviar({ className = "h-4 w-4" }: Props) {
 
 /* --- Iconos del mockup de Home (equivalentes a los Material Symbols) ------- */
 
+export function IconoReportes({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3 3v18h18" />
+      <path d="m19 9-5 5-4-4-3 3" />
+    </svg>
+  );
+}
+
 /** "dashboard": Home Resumen en la nav. */
 export function IconoPanel({ className = "h-4 w-4" }: Props) {
   return (
@@ -311,11 +320,40 @@ export function IconoConsulta({ className = "h-4 w-4" }: Props) {
   );
 }
 
+/** Engranaje: Configuracion de reglas del bot. */
+export function IconoConfiguracion({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 4.5v1.6M12 17.9v1.6M4.5 12h1.6M17.9 12h1.6M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1" />
+    </svg>
+  );
+}
+
+export function IconoBasura({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M5 7.5h14" />
+      <path d="M9.5 7.4V5.8A1.3 1.3 0 0 1 10.8 4.5h2.4a1.3 1.3 0 0 1 1.3 1.3v1.6" />
+      <path d="M7.2 7.5 8 18.2a1.5 1.5 0 0 0 1.5 1.3h5a1.5 1.5 0 0 0 1.5-1.3l.8-10.7" />
+    </svg>
+  );
+}
+
 /** "expand_more": el chevron del selector de cliente. */
 export function IconoChevron({ className = "h-4 w-4" }: Props) {
   return (
     <svg {...base} className={className}>
       <path d="m7 10 5 5 5-5" />
+    </svg>
+  );
+}
+
+export function IconoCampana({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
     </svg>
   );
 }

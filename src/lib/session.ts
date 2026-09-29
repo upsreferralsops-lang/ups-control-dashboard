@@ -1,6 +1,13 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSession, SESSION_COOKIE, SessionExpiredError, type Session } from "./api";
+import {
+  getSession,
+  SESSION_COOKIE,
+  SessionExpiredError,
+  type Session,
+} from "./api";
+import { esFalloDeCore, rutaEstadoServicio } from "./service-status";
 
 /**
  * Sesion del usuario, resuelta contra el core en cada request.
@@ -10,17 +17,24 @@ import { getSession, SESSION_COOKIE, SessionExpiredError, type Session } from ".
  * alcance por su cuenta, habria dos fuentes de verdad y tarde o temprano un
  * cliente terminaria viendo datos de otro.
  */
-export async function requireSession(): Promise<Session> {
+export const requireSession = cache(async (): Promise<Session> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) redirect("/login");
 
   try {
-    return await getSession();
+    const session = await getSession();
+    if (session.user.must_change_password) {
+      redirect("/cambiar-contrasena");
+    }
+    return session;
   } catch (error) {
     if (error instanceof SessionExpiredError) redirect("/login?vencida=1");
+    if (esFalloDeCore(error)) {
+      redirect(rutaEstadoServicio("core", { from: "/" }));
+    }
     throw error;
   }
-}
+});
 
 export async function requireAdmin(): Promise<Session> {
   const session = await requireSession();

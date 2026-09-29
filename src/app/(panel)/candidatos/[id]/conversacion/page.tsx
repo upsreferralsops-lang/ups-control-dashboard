@@ -6,12 +6,12 @@ import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
 import { ConversacionPanel } from "../ConversacionPanel";
 import { SelectorCanalConversacion } from "./SelectorCanalConversacion";
+import { esCanalActivo } from "@/lib/canales";
 
 export const dynamic = "force-dynamic";
 
 function canalValido(raw: string | undefined): "telegram" | "whatsapp" | undefined {
-  if (raw === "telegram" || raw === "whatsapp") return raw;
-  return undefined;
+  return raw && esCanalActivo(raw) ? raw : undefined;
 }
 
 export default async function CandidatoConversacionPage({
@@ -41,12 +41,11 @@ export default async function CandidatoConversacionPage({
   }
 
   const { candidate: c, conversation } = detalle;
-  const canalActivo =
-    detalle.conversation_channel ??
-    canalQuery ??
-    (c.channel === "whatsapp" ? "whatsapp" : "telegram");
+  // Con WhatsApp deshabilitado, cualquier conversacion se mira por Telegram.
+  const preferido = detalle.conversation_channel ?? canalQuery ?? c.channel;
+  const canalActivo = esCanalActivo(preferido) ? preferido : "telegram";
 
-  if (!canalQuery && sp.canal === undefined) {
+  if (!canalQuery) {
     const qs = new URLSearchParams();
     qs.set("canal", canalActivo);
     if (sp.mensaje) qs.set("mensaje", sp.mensaje);
@@ -54,7 +53,7 @@ export default async function CandidatoConversacionPage({
   }
 
   const tenantName = c.tenant_name || "este cliente";
-  const canales = canalesConversacion(detalle);
+  const canales = canalesConversacion(detalle).filter((v) => esCanalActivo(v.channel));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -66,26 +65,26 @@ export default async function CandidatoConversacionPage({
         </div>
       ) : null}
 
-      <Suspense
-        fallback={
-          <div className="grid shrink-0 grid-cols-2 gap-3">
-            <div className="latido h-[4.5rem] rounded-panel bg-sunk" />
-            <div className="latido h-[4.5rem] rounded-panel bg-sunk" />
-          </div>
-        }
-      >
-        <SelectorCanalConversacion
-          candidateId={id}
-          canales={canales}
-          canalActivo={canalActivo}
-        />
-      </Suspense>
+      {/* Con un solo canal activo no hay nada que elegir. */}
+      {canales.length > 1 ? (
+        <Suspense
+          fallback={
+            <div className="grid shrink-0 grid-cols-2 gap-3">
+              <div className="latido h-[4.5rem] rounded-panel bg-sunk" />
+              <div className="latido h-[4.5rem] rounded-panel bg-sunk" />
+            </div>
+          }
+        >
+          <SelectorCanalConversacion candidateId={id} canales={canales} canalActivo={canalActivo} />
+        </Suspense>
+      ) : null}
 
       <ConversacionPanel
         conversation={conversation}
         candidateId={id}
         tenantName={tenantName}
         focusMessageId={focusMessageId}
+        canal={canalActivo}
         canalLabel={canalActivo === "whatsapp" ? "WhatsApp" : "Telegram"}
       />
     </div>

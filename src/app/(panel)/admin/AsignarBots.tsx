@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { MOSTRAR_CANAL } from "@/lib/canales";
 import type { AdminTenant, Tenant } from "@/lib/api";
 import { Boton, Etiqueta } from "@/components/ui";
 import { guardarBots } from "./actions";
@@ -56,7 +57,7 @@ export function AsignarBots({
               <span className={t.active ? "" : "text-ink-soft"}>{t.name}</span>
               {/* Un bot de baja se puede seguir asignando: el cliente conserva
                   el historial que ya tiene, solo deja de entrar gente nueva. */}
-              <Etiqueta>{t.active ? t.channel : "de baja"}</Etiqueta>
+              <Etiqueta>{t.active ? (MOSTRAR_CANAL ? t.channel : "activo") : "de baja"}</Etiqueta>
             </label>
           );
         })}
