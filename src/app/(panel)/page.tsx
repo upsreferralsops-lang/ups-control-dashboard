@@ -85,7 +85,6 @@ function Kpi({
 type Fila = {
   id: string;
   nombre: string;
-  meta: string;
   channels: TenantChannel[];
   porCanal: Partial<Record<TenantChannel["channel"], number>>;
   candidatos: number | null;
@@ -139,7 +138,6 @@ function FilaCliente({ f }: { f: Fila }) {
     <div className="flex flex-col justify-between gap-5 p-6 transition-colors hover:bg-sunk/40 lg:flex-row lg:items-center">
       <div className="w-64 shrink-0">
         <div className="text-sm font-semibold text-brand">{f.nombre}</div>
-        <div className="mt-0.5 font-mono text-xs text-ink-soft">{f.meta}</div>
       </div>
 
       <div className={`grid flex-1 grid-cols-1 gap-4 ${CANALES.length > 1 ? "sm:grid-cols-2" : ""}`}>
@@ -263,11 +261,9 @@ export default async function Home({
   const todas: Fila[] =
     esAdmin && adminTenants && adminUsers
       ? adminTenants.map((t) => {
-          const alta = t.created_at ? new Date(t.created_at).getFullYear() : null;
           return {
             id: t.id,
             nombre: nombreVisibleCliente(t.id, adminUsers),
-            meta: `ID: ${t.slug}${alta ? ` · Alta ${alta}` : ""}`,
             channels: canalesDe(t.channels),
             porCanal: t.candidatos_por_canal ?? {},
             candidatos: t.candidatos,
@@ -275,12 +271,10 @@ export default async function Home({
           };
         })
       : tenants.map((t) => {
-          const alta = t.created_at ? new Date(t.created_at).getFullYear() : null;
           const porCanal = t.candidatos_por_canal ?? {};
           return {
             id: t.id,
             nombre: user.name ?? user.email,
-            meta: `ID: ${t.slug}${alta ? ` · Alta ${alta}` : ""}`,
             channels: canalesDe(t.channels),
             porCanal,
             creditos: creditosPorTenant.get(t.id),
