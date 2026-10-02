@@ -291,7 +291,9 @@ async function request<T>(path: string, init?: RequestInit, token?: string): Pro
     );
   }
 
-  if (response.status === 401) {
+  // Sin token (el propio login), un 401 son credenciales incorrectas: se
+  // muestra el detalle del core, no "sesion vencida".
+  if (response.status === 401 && auth) {
     throw new SessionExpiredError("Tu sesion vencio.", 401);
   }
   if (!response.ok) {

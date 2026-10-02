@@ -46,6 +46,9 @@ export function LoginForm() {
             name="email"
             type="email"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             required
             aria-describedby="email-ayuda"
             onChange={(e) => setEmailOk(e.currentTarget.validity.valid && e.currentTarget.value !== "")}
@@ -67,6 +70,11 @@ export function LoginForm() {
             name="password"
             type={verClave ? "text" : "password"}
             autoComplete="current-password"
+            // Con el ojito abierto es type="text": sin esto el teclado del
+            // celular le pone mayuscula a la primera letra o la autocorrige.
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             required
             className={`${CAMPO_LOGIN} pr-10`}
           />
