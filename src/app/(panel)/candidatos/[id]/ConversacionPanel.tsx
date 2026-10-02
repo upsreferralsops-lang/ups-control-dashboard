@@ -23,6 +23,9 @@ function AdjuntoMensaje({ m }: { m: Message & { id: number | string } }) {
     return (
       <audio
         controls
+        // Sin el menu de los 3 puntos (descargar, velocidad, transmitir):
+        // en el chat solo hace falta reproducir.
+        controlsList="nodownload noplaybackrate noremoteplayback"
         preload="none"
         src={src}
         aria-label={m.media_kind === "voice" ? "Nota de voz" : (m.media_name ?? "Audio")}

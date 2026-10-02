@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { CoreApiError } from "@/lib/api";
+import { CoreApiError, getNotifications } from "@/lib/api";
+import { MarcarLeidasAlVer } from "./MarcarLeidasAlVer";
 import { canalesConversacion, loadCandidatoDetalle } from "@/lib/candidato-detalle";
 import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
@@ -53,10 +54,17 @@ export default async function CandidatoConversacionPage({
   }
 
   const tenantName = c.tenant_name || "este cliente";
+  // Los avisos de este candidato que el usuario todavia no leyo. La campana
+  // ya los pidio en este mismo request (getNotifications esta cacheado).
+  const avisos = await getNotifications().catch(() => null);
+  const sinLeer = (avisos?.items ?? [])
+    .filter((n) => n.unread && n.data?.candidate_id === id)
+    .map((n) => n.id);
   const canales = canalesConversacion(detalle).filter((v) => esCanalActivo(v.channel));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      {sinLeer.length > 0 ? <MarcarLeidasAlVer ids={sinLeer} /> : null}
       {c.sensitive_data_received ? (
         <div className="shrink-0">
           <Aviso tono="warn" titulo="Envió datos sensibles por chat">
