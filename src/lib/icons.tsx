@@ -349,6 +349,34 @@ export function IconoChevron({ className = "h-4 w-4" }: Props) {
   );
 }
 
+/** "attach_file": adjuntar foto o archivo al chat. */
+export function IconoAdjuntar({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" />
+    </svg>
+  );
+}
+
+/** "mic": grabar una nota de voz. */
+export function IconoMicrofono({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+    </svg>
+  );
+}
+
+/** "menu": las tres rayas que abren el drawer en movil. */
+export function IconoMenu({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
 export function IconoCampana({ className = "h-4 w-4" }: Props) {
   return (
     <svg {...base} className={className}>

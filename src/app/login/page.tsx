@@ -38,7 +38,7 @@ export default async function LoginPage({
   const { vencida } = await searchParams;
 
   return (
-    <div className="tema-fijo grid min-h-screen bg-paper lg:grid-cols-[1fr_minmax(28rem,40rem)]">
+    <div className="tema-fijo grid min-h-dvh bg-paper lg:grid-cols-[1fr_minmax(28rem,40rem)]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-brand p-12 text-white lg:flex">
         {/* Dos focos calidos: el de arriba marca la identidad, el de abajo
             evita que el panel se lea como un rectangulo plano. */}

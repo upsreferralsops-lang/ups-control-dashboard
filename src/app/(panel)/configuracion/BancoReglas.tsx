@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ImprovementCase, PlaygroundMessage } from "@/lib/api";
 import { Aviso, Boton, CAMPO } from "@/components/ui";
-import { IconoEnviar } from "@/lib/icons";
+import { IconoEnviar, IconoVolver } from "@/lib/icons";
 import {
   cambiarActivaRegla,
   guardarBorrador,
@@ -55,6 +55,17 @@ export function BancoReglas({
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [chat, setChat] = useState<PlaygroundMessage[]>([]);
   const [probando, setProbando] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  // Solo en movil: reglas y playground se alternan, y la lista y el editor tambien.
+  const [vista, setVista] = useState<"reglas" | "playground">("reglas");
+  const [enDetalle, setEnDetalle] = useState(false);
+
+  // La respuesta del bot queda a la vista sin tener que scrollear a mano.
+  useEffect(() => {
+    if (chat.length === 0 && !probando) return;
+    chatRef.current?.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [chat.length, probando]);
 
   const actual = useMemo(
     () => (seleccion && seleccion !== "nueva" ? casos.find((c) => c.id === seleccion) : undefined),
@@ -84,18 +95,56 @@ export function BancoReglas({
     actual && !actual.published && actual.tested_in_playground_at && !soloLectura,
   );
 
+  const volver = (
+    <button
+      type="button"
+      onClick={() => setEnDetalle(false)}
+      className="inline-flex items-center gap-1.5 self-start rounded-control text-sm text-ink-soft transition-colors duration-150 hover:text-ink md:hidden"
+    >
+      <IconoVolver className="h-3.5 w-3.5" />
+      {pestana === "reglas" ? "Reglas" : "Correcciones"}
+    </button>
+  );
+
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <section className="flex min-h-0 flex-col rounded-panel border border-line bg-surface">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 max-lg:grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div role="tablist" aria-label="Vista de configuración" className="flex gap-1 rounded-control bg-sunk p-0.5 lg:hidden">
+        {(
+          [
+            ["reglas", "Reglas"],
+            ["playground", "Playground"],
+          ] as const
+        ).map(([valor, texto]) => (
+          <button
+            key={valor}
+            type="button"
+            role="tab"
+            aria-selected={vista === valor}
+            onClick={() => setVista(valor)}
+            className={`min-h-9 flex-1 rounded-control px-3 text-sm font-semibold transition-colors duration-150 ${
+              vista === valor ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
+            }`}
+          >
+            {texto}
+          </button>
+        ))}
+      </div>
+
+      <section
+        className={`flex min-h-0 flex-col rounded-panel border border-line bg-surface ${
+          vista === "playground" ? "max-lg:hidden" : ""
+        }`}
+      >
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div className="flex items-center gap-1 rounded-control bg-sunk p-0.5">
             <button
               type="button"
               onClick={() => {
                 setPestana("reglas");
+                setEnDetalle(false);
                 abrir(reglas[0] ?? "nueva");
               }}
-              className={`rounded-control px-2.5 py-1 text-xs font-semibold ${
+              className={`rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:px-3 max-md:text-sm ${
                 pestana === "reglas" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
               }`}
             >
@@ -105,11 +154,12 @@ export function BancoReglas({
               type="button"
               onClick={() => {
                 setPestana("correcciones");
+                setEnDetalle(false);
                 const primera = correcciones[0];
                 if (primera) abrir(primera);
                 else setSeleccion(null);
               }}
-              className={`rounded-control px-2.5 py-1 text-xs font-semibold ${
+              className={`rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:px-3 max-md:text-sm ${
                 pestana === "correcciones" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
               }`}
             >
@@ -120,7 +170,10 @@ export function BancoReglas({
             <Boton
               type="button"
               className="!min-h-8 !px-2.5 !py-1 text-xs"
-              onClick={() => abrir("nueva")}
+              onClick={() => {
+                abrir("nueva");
+                setEnDetalle(true);
+              }}
             >
               Nueva regla
             </Boton>
@@ -128,7 +181,8 @@ export function BancoReglas({
         </header>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-          <ul className="max-h-56 overflow-y-auto border-b border-line md:max-h-none md:border-b-0 md:border-r">
+          {/* En movil la lista ocupa todo; tocar una regla abre el editor en su lugar. */}
+          <ul className={`overflow-y-auto border-line md:border-r ${enDetalle ? "max-md:hidden" : ""}`}>
             {listado.length === 0 ? (
               <li className="px-4 py-6 text-sm text-ink-soft">
                 {pestana === "reglas"
@@ -142,7 +196,10 @@ export function BancoReglas({
                   <li key={caso.id}>
                     <button
                       type="button"
-                      onClick={() => abrir(caso)}
+                      onClick={() => {
+                        abrir(caso);
+                        setEnDetalle(true);
+                      }}
                       className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left text-sm transition-colors duration-150 ${
                         activo ? "bg-brand-wash text-ink" : "text-ink-soft hover:bg-sunk hover:text-ink"
                       }`}
@@ -163,7 +220,8 @@ export function BancoReglas({
           </ul>
 
           {pestana === "correcciones" ? (
-            <div className="flex min-h-0 flex-col gap-3 p-4">
+            <div className={`flex min-h-0 flex-col gap-3 p-4 ${enDetalle ? "" : "max-md:hidden"}`}>
+              {volver}
               {actual && esCorreccion(actual) ? (
                 <>
                   <p className="text-xs text-ink-soft">
@@ -205,7 +263,7 @@ export function BancoReglas({
             </div>
           ) : (
           <form
-            className="flex min-h-0 flex-col gap-3 p-4"
+            className={`flex min-h-0 flex-col gap-3 p-4 ${enDetalle ? "" : "max-md:hidden"}`}
             onSubmit={(e) => {
               e.preventDefault();
               if (soloLectura) return;
@@ -231,6 +289,7 @@ export function BancoReglas({
               });
             }}
           >
+            {volver}
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-ink-soft">Título</span>
               <input
@@ -287,11 +346,18 @@ export function BancoReglas({
 
             {!soloLectura && !actual?.published && actual && !actual.tested_in_playground_at ? (
               <p className="text-xs text-ink-soft">
-                Probá esta regla en el playground para poder habilitarla.
+                Probá esta regla en el playground para poder habilitarla.{" "}
+                <button
+                  type="button"
+                  onClick={() => setVista("playground")}
+                  className="font-semibold text-brand underline-offset-2 hover:underline lg:hidden"
+                >
+                  Abrir playground
+                </button>
               </p>
             ) : null}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-sm:flex-col">
               {soloLectura ? null : (
               <Boton type="submit" variante="primario" disabled={pendiente || guia.trim().length < 8}>
                 Guardar borrador
@@ -350,7 +416,11 @@ export function BancoReglas({
         </div>
       </section>
 
-      <section className="flex min-h-[40vh] flex-col rounded-panel border border-line bg-surface lg:min-h-0">
+      <section
+        className={`flex min-h-[40vh] flex-col rounded-panel border border-line bg-surface max-lg:min-h-[60dvh] lg:min-h-0 ${
+          vista === "reglas" ? "max-lg:hidden" : ""
+        }`}
+      >
         <header className="border-b border-line px-4 py-3">
           <h2 className="text-sm font-semibold text-ink">Playground</h2>
           <p className="mt-1 text-xs text-ink-soft">
@@ -379,7 +449,10 @@ export function BancoReglas({
           </label>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
+        <div
+          ref={chatRef}
+          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3 max-lg:[&>*]:scroll-mb-24"
+        >
           {chat.length === 0 && !probando ? (
             <p className="m-auto max-w-prose text-center text-sm text-ink-soft">
               Escribí como un candidato para ver cómo responde el bot con las reglas nuevas.
@@ -403,8 +476,16 @@ export function BancoReglas({
           ) : null}
         </div>
 
+        {/* El error del playground se ve abajo del editor en escritorio; en movil, aca. */}
+        {error ? (
+          <div className="px-4 pb-3 lg:hidden">
+            <Aviso tono="bad">{error}</Aviso>
+          </div>
+        ) : null}
+
+        {/* En movil la caja de mensaje queda pegada abajo mientras se lee la prueba. */}
         <form
-          className="flex gap-2 border-t border-line p-3"
+          className="flex gap-2 rounded-b-panel border-t border-line bg-surface p-3 max-lg:sticky max-lg:bottom-0"
           onSubmit={(e) => {
             e.preventDefault();
             const texto = mensaje.trim();

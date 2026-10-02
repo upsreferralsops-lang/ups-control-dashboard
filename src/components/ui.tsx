@@ -30,7 +30,7 @@ export function Boton({
     <button
       {...props}
       className={
-        "inline-flex min-h-9 items-center justify-center gap-2 rounded-control px-3 py-2 " +
+        "inline-flex min-h-9 pointer-coarse:min-h-11 items-center justify-center gap-2 rounded-control px-3 py-2 " +
         "text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed " +
         `disabled:opacity-60 ${BOTON[variante]} ${className}`
       }

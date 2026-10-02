@@ -30,8 +30,8 @@ export function PieSesion({
     const cerrar = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setAbierto(false);
     };
-    document.addEventListener("mousedown", cerrar);
-    return () => document.removeEventListener("mousedown", cerrar);
+    document.addEventListener("pointerdown", cerrar);
+    return () => document.removeEventListener("pointerdown", cerrar);
   }, [abierto]);
 
   function elegir(accion: () => Promise<void>) {

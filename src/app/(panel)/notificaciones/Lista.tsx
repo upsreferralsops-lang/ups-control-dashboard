@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Notificacion } from "@/lib/api";
-import { IconoAlerta, IconoCheck, IconoOk } from "@/lib/icons";
+import { IconoAlerta, IconoCheck, IconoConversacion, IconoOk } from "@/lib/icons";
 import { marcarLeidas } from "./actions";
 
 const TONO: Record<Notificacion["kind"], { Icono: typeof IconoOk; caja: string }> = {
@@ -10,6 +11,8 @@ const TONO: Record<Notificacion["kind"], { Icono: typeof IconoOk; caja: string }
   credits_depleted: { Icono: IconoAlerta, caja: "bg-bad-wash text-bad-ink" },
   credits_recharged: { Icono: IconoCheck, caja: "bg-sunk text-ink" },
   referral_success: { Icono: IconoOk, caja: "bg-sunk text-ink" },
+  human_escalation: { Icono: IconoAlerta, caja: "bg-attention-wash text-attention-ink" },
+  candidate_waiting: { Icono: IconoConversacion, caja: "bg-signal-wash text-signal-ink" },
 };
 
 function cuando(iso: string): string {
@@ -45,19 +48,34 @@ export function ListaNotificaciones({ items, noLeidas }: { items: Notificacion[]
       {error && <p className="text-sm text-bad-ink" role="alert">{error}</p>}
       {items.length === 0 ? (
         <p className="rounded-panel border border-line bg-surface p-6 text-sm text-ink-soft">
-          Todavía no hay notificaciones. Acá vas a ver saldo bajo, recargas y referidos exitosos.
+          Todavía no hay notificaciones. Acá vas a ver saldo bajo, recargas, referidos exitosos y
+          candidatos que necesitan que les escriba una persona.
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-panel border border-line bg-surface">
           {items.map((n) => {
-            const { Icono, caja } = TONO[n.kind];
+            // Tipo desconocido (core mas nuevo que el panel): se muestra igual.
+            const { Icono, caja } = TONO[n.kind] ?? TONO.credits_recharged;
+            const candidato = n.data?.candidate_id;
             return (
               <li key={n.id} className="flex items-start gap-3 border-b border-line px-4 py-3 last:border-b-0">
                 <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${caja}`}>
                   <Icono className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm text-ink ${n.unread ? "font-semibold" : ""}`}>{n.title}</p>
+                  {candidato ? (
+                    <Link
+                      href={`/candidatos/${candidato}/conversacion`}
+                      onClick={() => n.unread && void marcar([n.id])}
+                      className={`rounded-control text-sm text-ink underline-offset-4 decoration-signal decoration-2 hover:underline ${
+                        n.unread ? "font-semibold" : ""
+                      }`}
+                    >
+                      {n.title}
+                    </Link>
+                  ) : (
+                    <p className={`text-sm text-ink ${n.unread ? "font-semibold" : ""}`}>{n.title}</p>
+                  )}
                   {n.body && <p className="mt-0.5 max-w-[65ch] text-sm text-ink-soft">{n.body}</p>}
                   <p className="mt-1 text-xs text-ink-faint">{cuando(n.created_at)}</p>
                 </div>

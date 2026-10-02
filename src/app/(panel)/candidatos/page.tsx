@@ -67,10 +67,10 @@ function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => strin
   ];
 
   return (
-    <div className="flex flex-col gap-6 rounded-panel border border-line bg-surface px-6 py-5 sm:flex-row sm:items-end">
+    <div className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-end sm:gap-6 sm:px-6 sm:py-5">
       <div className="sm:pr-8">
         <p className="eyebrow">Candidatos</p>
-        <p className="mt-1 text-4xl font-semibold leading-none tabular-nums tracking-tight">
+        <p className="mt-1 text-3xl font-semibold leading-none tabular-nums tracking-tight sm:text-4xl">
           {metrics.total}
         </p>
         {metrics.con_datos_sensibles > 0 && (
@@ -80,7 +80,8 @@ function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => strin
         )}
       </div>
 
-      <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-4 border-line sm:grid-cols-5 sm:border-l sm:pl-8">
+      {/* En movil 3 columnas: las cinco cifras entran en dos filas cortas. */}
+      <div className="grid flex-1 grid-cols-3 gap-x-4 gap-y-3 border-line sm:grid-cols-5 sm:gap-x-6 sm:gap-y-4 sm:border-l sm:pl-8">
         {celdas.map((c) => {
           const parte = metrics.total > 0 ? (c.value / metrics.total) * 100 : 0;
           const cuerpo = (
@@ -89,7 +90,7 @@ function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => strin
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.color}`} aria-hidden />
                 <span className="truncate text-xs text-ink-soft">{c.label}</span>
               </div>
-              <p className="mt-0.5 text-xl font-semibold tabular-nums">{c.value}</p>
+              <p className="mt-0.5 text-lg font-semibold tabular-nums sm:text-xl">{c.value}</p>
               <div className="mt-1.5 h-0.5 w-full bg-sunk" aria-hidden>
                 <div className={`h-full ${c.color}`} style={{ width: `${parte}%` }} />
               </div>
@@ -114,16 +115,91 @@ function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => strin
   );
 }
 
+const usuarios = (c: Candidate) =>
+  c.owners.length > 0 ? c.owners.map((o) => o.name ?? o.email).join(", ") : "sin usuario asignado";
+
 function Duenos({ c }: { c: Candidate }) {
   return (
     <td className="px-3 py-2.5">
       <p className="font-medium">{c.tenant_name ?? "sin bot"}</p>
-      <p className="mt-0.5 truncate text-xs text-ink-soft">
-        {c.owners.length > 0
-          ? c.owners.map((o) => o.name ?? o.email).join(", ")
-          : "sin usuario asignado"}
-      </p>
+      <p className="mt-0.5 truncate text-xs text-ink-soft">{usuarios(c)}</p>
     </td>
+  );
+}
+
+function DatoSensible({ className = "" }: { className?: string }) {
+  return (
+    <span
+      title="Envió un dato sensible por chat; el sistema lo descartó antes de guardarlo"
+      className={`whitespace-nowrap rounded-full border border-warn-border bg-warn-wash px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-warn-ink ${className}`}
+    >
+      dato sensible
+    </span>
+  );
+}
+
+/** HITL: el bot está pausado para este candidato; lo atiende una persona. */
+function AtendidoPorPersona({ c, className = "" }: { c: Candidate; className?: string }) {
+  if (!c.bot_paused) return null;
+  const pidio = Boolean(c.human_escalation_reason);
+  return (
+    <span
+      title={pidio ? `El bot pidió una persona: ${c.human_escalation_reason}` : "Bot pausado"}
+      className={`whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+        pidio
+          ? "border-attention-border bg-attention-wash text-attention-ink"
+          : "border-signal/40 bg-signal-wash text-signal-ink"
+      } ${className}`}
+    >
+      {pidio ? "pide una persona" : "atendido por persona"}
+    </span>
+  );
+}
+
+/** En movil la tabla se lee como una lista de tarjetas con los mismos datos. */
+function Tarjetas({ candidatos, verDueno }: { candidatos: Candidate[]; verDueno: boolean }) {
+  return (
+    <ul className="flex flex-col gap-2 md:hidden">
+      {candidatos.map((c) => (
+        <li key={c.id}>
+          <Link
+            href={`/candidatos/${c.id}`}
+            className="flex flex-col gap-2 rounded-panel border border-line bg-surface px-4 py-3 text-sm transition-colors duration-100 active:bg-sunk"
+          >
+            <span className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 font-medium">{fullName(c)}</span>
+              <span className="shrink-0 text-xs tabular-nums text-ink-faint">
+                {timeAgo(c.last_candidate_message_at ?? c.created_at)}
+              </span>
+            </span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              <Estado status={c.referral_status} candidate={c} />
+              {c.sensitive_data_received && <DatoSensible />}
+              <AtendidoPorPersona c={c} />
+            </span>
+            <span className="flex flex-col gap-0.5 text-ink-soft">
+              {(c.email || c.phone) && (
+                <span className="truncate">
+                  {c.email}
+                  {c.email && c.phone && " · "}
+                  <span className="tabular-nums">{c.phone}</span>
+                </span>
+              )}
+              {(c.city || c.matched_warehouse_name) && (
+                <span className="line-clamp-2">
+                  {[c.city, c.matched_warehouse_name].filter(Boolean).join(" · ")}
+                </span>
+              )}
+              {verDueno && (
+                <span className="truncate text-xs text-ink-faint">
+                  {c.tenant_name ?? "sin bot"} · {usuarios(c)}
+                </span>
+              )}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -197,71 +273,68 @@ function Tabla({
   }
 
   return (
-    <div className="max-h-[calc(100vh-8rem)] overflow-auto rounded-panel border border-line bg-surface">
-      <table className="tabla-pegajosa w-full text-sm">
-        <thead>
-          <tr>
-            <Th label="Candidato" campo="candidato" orden={orden} dir={dir} href={href} />
-            <Th label="Contacto" orden={orden} dir={dir} href={href} />
-            <Th label="Zona" campo="zona" orden={orden} dir={dir} href={href} />
-            <Th label="Posición elegida" orden={orden} dir={dir} href={href} />
-            {verDueno && <Th label="Bot / usuario" orden={orden} dir={dir} href={href} />}
-            <Th label="Estado" campo="estado" orden={orden} dir={dir} href={href} />
-            <Th
-              label="Últ. mensaje"
-              campo="actividad"
-              orden={orden}
-              dir={dir}
-              href={href}
-              alDerecha
-            />
-          </tr>
-        </thead>
-        <tbody>
-          {candidatos.map((c) => (
-            <tr
-              key={c.id}
-              className="border-t border-line/60 transition-colors duration-100 hover:bg-sunk/60"
-            >
-              <td className="px-3 py-2.5">
-                <Link
-                  href={`/candidatos/${c.id}`}
-                  className="rounded-control font-medium decoration-signal decoration-2 underline-offset-4 hover:underline"
-                >
-                  {fullName(c)}
-                </Link>
-                {c.sensitive_data_received && (
-                  <span
-                    title="Envió un dato sensible por chat; el sistema lo descartó antes de guardarlo"
-                    className="ml-2 whitespace-nowrap rounded-full border border-warn-border bg-warn-wash px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-warn-ink"
-                  >
-                    dato sensible
-                  </span>
-                )}
-              </td>
-              <td className="px-3 py-2.5 text-ink-soft">
-                <div className="max-w-52 truncate">{c.email ?? "—"}</div>
-                <div className="text-xs tabular-nums text-ink-faint">{c.phone ?? "—"}</div>
-              </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">
-                {c.city ?? "—"}
-                {c.zip && <span className="ml-1.5 text-xs tabular-nums text-ink-faint">{c.zip}</span>}
-              </td>
-              <td className="max-w-56 px-3 py-2.5 text-ink-soft">
-                <span className="line-clamp-2">{c.matched_warehouse_name ?? "—"}</span>
-              </td>
-              {verDueno && <Duenos c={c} />}
-              <td className="px-3 py-2.5" title={presentacionReferido(c).help}>
-                <Estado status={c.referral_status} candidate={c} />
-              </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-right text-xs tabular-nums text-ink-faint">
-                {timeAgo(c.last_candidate_message_at ?? c.created_at)}
-              </td>
+    <>
+      <Tarjetas candidatos={candidatos} verDueno={verDueno} />
+      <div className="hidden max-h-[calc(100dvh-8rem)] overflow-auto rounded-panel border border-line bg-surface md:block">
+        <table className="tabla-pegajosa w-full text-sm">
+          <thead>
+            <tr>
+              <Th label="Candidato" campo="candidato" orden={orden} dir={dir} href={href} />
+              <Th label="Contacto" orden={orden} dir={dir} href={href} />
+              <Th label="Zona" campo="zona" orden={orden} dir={dir} href={href} />
+              <Th label="Posición elegida" orden={orden} dir={dir} href={href} />
+              {verDueno && <Th label="Bot / usuario" orden={orden} dir={dir} href={href} />}
+              <Th label="Estado" campo="estado" orden={orden} dir={dir} href={href} />
+              <Th
+                label="Últ. mensaje"
+                campo="actividad"
+                orden={orden}
+                dir={dir}
+                href={href}
+                alDerecha
+              />
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {candidatos.map((c) => (
+              <tr
+                key={c.id}
+                className="border-t border-line/60 transition-colors duration-100 hover:bg-sunk/60"
+              >
+                <td className="px-3 py-2.5">
+                  <Link
+                    href={`/candidatos/${c.id}`}
+                    className="rounded-control font-medium decoration-signal decoration-2 underline-offset-4 hover:underline"
+                  >
+                    {fullName(c)}
+                  </Link>
+                  {c.sensitive_data_received && <DatoSensible className="ml-2" />}
+                  <AtendidoPorPersona c={c} className="ml-2" />
+                </td>
+                <td className="px-3 py-2.5 text-ink-soft">
+                  <div className="max-w-52 truncate">{c.email ?? "—"}</div>
+                  <div className="text-xs tabular-nums text-ink-faint">{c.phone ?? "—"}</div>
+                </td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">
+                  {c.city ?? "—"}
+                  {c.zip && <span className="ml-1.5 text-xs tabular-nums text-ink-faint">{c.zip}</span>}
+                </td>
+                <td className="max-w-56 px-3 py-2.5 text-ink-soft">
+                  <span className="line-clamp-2">{c.matched_warehouse_name ?? "—"}</span>
+                </td>
+                {verDueno && <Duenos c={c} />}
+                <td className="px-3 py-2.5" title={presentacionReferido(c).help}>
+                  <Estado status={c.referral_status} candidate={c} />
+                </td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-right text-xs tabular-nums text-ink-faint">
+                  {timeAgo(c.last_candidate_message_at ?? c.created_at)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -340,7 +413,7 @@ export default async function Panel({
         <div>
           <p className="eyebrow">Operación</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Candidatos</h1>
-          <p className="mt-1 max-w-prose text-sm text-ink-soft">
+          <p className="mt-1 max-w-prose text-sm text-ink-soft max-sm:hidden">
             Supervisión en tiempo real de referidos captados por bots enlazados a UPS.
           </p>
         </div>
@@ -358,7 +431,11 @@ export default async function Panel({
         <Buscador q={q} bot={bot} estado={filtro} tenants={tenants} />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1">
+          {/* En movil los filtros son una fila que se desliza, no dos filas apiladas. */}
+          <nav
+            aria-label="Filtrar por estado"
+            className="flex gap-1 max-md:w-full max-md:overflow-x-auto max-md:[scrollbar-width:none] max-sm:-mx-5 max-sm:w-[calc(100%+2.5rem)] max-sm:px-5 md:flex-wrap"
+          >
             {FILTROS.map((f) => {
               const activo = filtro === f.value;
               return (
@@ -366,7 +443,7 @@ export default async function Panel({
                   key={f.value}
                   href={cola(f.value)}
                   aria-current={activo ? "true" : undefined}
-                  className={`inline-flex min-h-9 items-center rounded-control border px-3 py-1.5 text-sm transition-colors duration-150 ${
+                  className={`inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-control border px-3 py-1.5 text-sm transition-colors duration-150 ${
                     activo
                       ? "border-brand bg-brand text-white"
                       : "border-line bg-surface text-ink-soft hover:border-line-strong hover:bg-sunk hover:text-ink"

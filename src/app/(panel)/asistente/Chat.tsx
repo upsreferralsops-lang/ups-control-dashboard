@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, startTransition } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, startTransition } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -132,20 +132,64 @@ export function AsistenteSala({
   detalle: OpsThreadDetail | null;
   error: string | null;
 }) {
+  // Solo en movil: chat e historial no entran juntos, se alterna con el switch.
+  const [vista, setVista] = useState<"chat" | "historial">("chat");
+
   return (
     <div
       data-fill-panel
-      className="flex min-h-[72dvh] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] md:min-h-0"
+      className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] max-md:h-[calc(100dvh-6.5rem)] max-md:flex-none md:min-h-0"
     >
-      <div className="grid min-h-0 flex-1 md:grid-cols-[17.5rem_minmax(0,1fr)] lg:grid-cols-[19rem_minmax(0,1fr)]">
-        <ListaHilos hilos={hilos} hiloId={hiloId} />
-        <Conversacion hiloId={hiloId} detalle={detalle} error={error} />
+      <div className="border-b border-line p-2 md:hidden">
+        <div role="tablist" aria-label="Vista del asistente" className="flex gap-1 rounded-control bg-sunk p-0.5">
+          {(
+            [
+              ["chat", "Chat"],
+              ["historial", "Historial"],
+            ] as const
+          ).map(([valor, etiqueta]) => (
+            <button
+              key={valor}
+              type="button"
+              role="tab"
+              aria-selected={vista === valor}
+              onClick={() => setVista(valor)}
+              className={`min-h-9 flex-1 rounded-control px-3 text-sm font-semibold transition-colors duration-150 ${
+                vista === valor ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
+              }`}
+            >
+              {etiqueta}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[17.5rem_minmax(0,1fr)] lg:grid-cols-[19rem_minmax(0,1fr)]">
+        <ListaHilos
+          hilos={hilos}
+          hiloId={hiloId}
+          visibleEnMovil={vista === "historial"}
+          alElegir={() => setVista("chat")}
+        />
+        <div className={`flex min-h-0 min-w-0 flex-col ${vista === "historial" ? "max-md:hidden" : ""}`}>
+          <Conversacion hiloId={hiloId} detalle={detalle} error={error} />
+        </div>
       </div>
     </div>
   );
 }
 
-function ListaHilos({ hilos, hiloId }: { hilos: OpsThread[]; hiloId: string | null }) {
+function ListaHilos({
+  hilos,
+  hiloId,
+  visibleEnMovil,
+  alElegir,
+}: {
+  hilos: OpsThread[];
+  hiloId: string | null;
+  visibleEnMovil: boolean;
+  /** Al abrir o crear un chat desde el historial, el movil vuelve a la vista de chat. */
+  alElegir: () => void;
+}) {
   const router = useRouter();
   const filtroId = useId();
   const [filtro, setFiltro] = useState("");
@@ -164,7 +208,7 @@ function ListaHilos({ hilos, hiloId }: { hilos: OpsThread[]; hiloId: string | nu
   return (
     <aside
       className={`min-h-0 flex-col border-line bg-[color-mix(in_srgb,var(--brand)_4%,var(--paper))] md:flex md:border-r ${
-        hiloId ? "hidden" : "flex max-h-80 border-b md:max-h-none md:border-b-0"
+        visibleEnMovil ? "flex" : "hidden"
       }`}
     >
       <div className="flex flex-col gap-3 px-3 pb-2 pt-3">
@@ -177,6 +221,7 @@ function ListaHilos({ hilos, hiloId }: { hilos: OpsThread[]; hiloId: string | nu
           </div>
           <Link
             href="/asistente"
+            onClick={alElegir}
             aria-current={hiloId ? undefined : "page"}
             title="Empezar un chat nuevo (no se guarda hasta que escribas)"
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-control bg-brand px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50"
@@ -260,6 +305,7 @@ function ListaHilos({ hilos, hiloId }: { hilos: OpsThread[]; hiloId: string | nu
                 >
                   <Link
                     href={`/asistente?hilo=${item.id}`}
+                    onClick={alElegir}
                     aria-current={activo ? "page" : undefined}
                     className="min-w-0 flex-1 px-3 py-2.5 focus-visible:outline-none"
                   >
@@ -275,7 +321,7 @@ function ListaHilos({ hilos, hiloId }: { hilos: OpsThread[]; hiloId: string | nu
                     type="button"
                     aria-label={`Borrar ${item.title}`}
                     title="Borrar chat"
-                    className="my-1.5 mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-control text-ink-faint opacity-100 transition-colors hover:bg-bad-wash hover:text-bad-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                    className="my-1.5 mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-control text-ink-faint opacity-100 transition-colors hover:bg-bad-wash hover:text-bad-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100"
                     onClick={() => {
                       setError(null);
                       setBorrando(item.id);
@@ -315,14 +361,6 @@ function Conversacion({
   return (
     <section className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
       <header className="flex items-center gap-3 border-b border-line px-4 py-3 md:px-5">
-        {hiloId && (
-          <Link
-            href="/asistente"
-            className="rounded-control px-2 py-1 text-sm font-semibold text-ink-soft hover:bg-sunk hover:text-ink md:hidden"
-          >
-            ← Chats
-          </Link>
-        )}
         <span
           aria-hidden
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold tracking-tight text-white"
@@ -459,6 +497,12 @@ function ajustarAlto(area: HTMLTextAreaElement) {
 function Composer({ threadId }: { threadId: string | null }) {
   const formRef = useRef<HTMLFormElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  // Los atajos de teclado solo se anuncian con mouse; en touch cortaban el placeholder.
+  const conTeclado = useSyncExternalStore(
+    () => () => {},
+    () => matchMedia("(pointer: fine)").matches,
+    () => true,
+  );
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -506,9 +550,8 @@ function Composer({ threadId }: { threadId: string | null }) {
           rows={1}
           disabled={enviando}
           placeholder={
-            threadId
-              ? "Seguí la conversación…  Ctrl+Enter envía · Shift+Enter baja de línea"
-              : "Escribí tu pedido…  Ctrl+Enter envía · Shift+Enter baja de línea"
+            (threadId ? "Seguí la conversación…" : "Escribí tu pedido…") +
+            (conTeclado ? "  Ctrl+Enter envía · Shift+Enter baja de línea" : "")
           }
           onInput={(event) => ajustarAlto(event.currentTarget)}
           onKeyDown={(event) => {

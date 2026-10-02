@@ -113,7 +113,7 @@ export default async function ConfiguracionPage({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-brand">Configuración</h1>
-          <p className="mt-1 text-sm text-ink-soft">
+          <p className="mt-1 text-sm text-ink-soft max-sm:hidden">
             {esAdmin
               ? `Reglas del bot de ${etiqueta} (guían todos los chats) y correcciones de una conversación (aviso puntual, no se reutilizan). Si marcás una regla como global, los demás la ven en solo lectura.`
               : `Reglas del bot de ${etiqueta} (guían todos los chats) y correcciones de una conversación (aviso puntual). Las globales las ves en solo lectura.`}

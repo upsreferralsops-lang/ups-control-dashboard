@@ -74,8 +74,9 @@ export function HistorialLista({ entries }: { entries: ApplicationHistoryEntry[]
 
   return (
     <div className="overflow-x-auto rounded-panel border border-line bg-surface">
-      <table className="tabla-pegajosa w-full text-sm">
-        <thead>
+      {/* En movil cada fila se apila como tarjeta: mismas celdas, sin encabezados. */}
+      <table className="tabla-pegajosa w-full text-sm max-md:block">
+        <thead className="max-md:hidden">
           <tr>
             <th className="px-3 py-2.5 text-left">
               <span className="eyebrow">Fecha</span>
@@ -97,7 +98,7 @@ export function HistorialLista({ entries }: { entries: ApplicationHistoryEntry[]
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:block">
           {entries.map((entry, i) => {
             const { titulo, subtitulo, estado } = resumenFila(entry);
             const tipo = etiquetaTipoHistorial(entry);
@@ -109,7 +110,7 @@ export function HistorialLista({ entries }: { entries: ApplicationHistoryEntry[]
             return (
               <tr
                 key={key}
-                className="border-t border-line/60 transition-colors duration-100 hover:bg-sunk/60"
+                className="border-t border-line/60 transition-colors duration-100 hover:bg-sunk/60 max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3 max-md:gap-y-1.5 max-md:px-4 max-md:py-3 max-md:first:border-t-0 max-md:[&>td]:p-0"
               >
                 <td className="whitespace-nowrap px-3 py-2.5 text-xs tabular-nums text-ink-faint">
                   {fechaFila(entry)}
@@ -117,11 +118,11 @@ export function HistorialLista({ entries }: { entries: ApplicationHistoryEntry[]
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <Etiqueta>{tipo}</Etiqueta>
                 </td>
-                <td className="max-w-xs px-3 py-2.5">
+                <td className="max-w-xs px-3 py-2.5 max-md:max-w-none max-md:basis-full">
                   <div className="font-medium text-ink">{titulo}</div>
                   <div className="mt-0.5 line-clamp-2 text-xs text-ink-soft">{subtitulo}</div>
                 </td>
-                <td className="max-w-sm px-3 py-2.5 text-ink-soft">
+                <td className="max-w-sm px-3 py-2.5 text-ink-soft max-md:max-w-none max-md:basis-full">
                   {entry.kind === "referral_attempt" && entry.posting_id ? (
                     <span className="text-xs tabular-nums text-ink-faint">ID {entry.posting_id}</span>
                   ) : null}

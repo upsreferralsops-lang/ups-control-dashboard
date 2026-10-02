@@ -3,7 +3,9 @@ import { requireSession } from "@/lib/session";
 import { cargarOpcionesVista, getCredits, getNotifications, type TenantCredits } from "@/lib/api";
 import { IconoCamion } from "@/lib/icons";
 import { NavLateral } from "./NavLateral";
+import { MenuMovil } from "./MenuMovil";
 import { SseRefresh } from "@/components/SseRefresh";
+import { RegistrarServiceWorker } from "@/components/RegistrarServiceWorker";
 import { BannerImpersonacion } from "@/components/BannerImpersonacion";
 import { BannerCreditos } from "@/components/BannerCreditos";
 import { PieSesion } from "@/components/PieSesion";
@@ -46,6 +48,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     // la consola se ve igual sin importar el tema del sistema operativo.
     <div className="tema-fijo flex min-h-dvh flex-col bg-paper md:h-dvh md:flex-row md:overflow-hidden">
       <SseRefresh userId={user.id} />
+      <RegistrarServiceWorker />
       <a
         href="#contenido"
         className="saltar-al-contenido rounded-control bg-brand px-3 py-2 text-sm text-white"
@@ -53,11 +56,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         Saltar al contenido
       </a>
 
-      <aside className="z-10 flex shrink-0 flex-col justify-between border-b border-line bg-surface md:h-dvh md:w-64 md:border-b-0 md:border-r">
+      <MenuMovil noLeidas={noLeidas}>
         <div className="flex flex-col">
           <Link
             href="/"
-            className="flex h-16 items-center gap-3 border-b border-line px-6 transition-opacity duration-150 hover:opacity-80"
+            className="flex h-16 items-center gap-3 border-b border-line px-6 transition-opacity duration-150 hover:opacity-80 max-md:pr-14"
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand">
               {/* Naranja de marca sobre el chocolate, como en el diseno. */}
@@ -78,7 +81,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </div>
 
-        <div className="border-line p-4 md:border-t">
+        <div className="border-t border-line p-4">
           <PieSesion
             user={user}
             subtitulo={subtituloSesion}
@@ -86,11 +89,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             mostrarSwitch={mostrarSwitchVista}
           />
         </div>
-      </aside>
+      </MenuMovil>
 
       <main
         id="contenido"
-        className="flex w-full min-w-0 flex-1 flex-col gap-8 overflow-x-hidden overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 md:min-h-0 [&>*:not([data-fill-panel])]:shrink-0"
+        className="flex w-full min-w-0 flex-1 flex-col gap-8 max-md:overflow-x-clip md:overflow-x-hidden md:overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 md:min-h-0 [&>*:not([data-fill-panel])]:shrink-0"
       >
         {impersonation && <BannerImpersonacion user={user} impersonation={impersonation} />}
         {!esAdmin && <BannerCreditos alertas={alertasCreditos} />}

@@ -68,7 +68,7 @@ export function NavLateral({
   ].filter((m) => PANEL_ADMIN_CLIENTES_BOTS || m.href !== "/admin");
 
   return (
-    <nav aria-label="Secciones" className="flex gap-1.5 md:flex-col">
+    <nav aria-label="Secciones" className="flex flex-col gap-1.5">
       {modulos
         .filter((m) => esAdmin || !m.soloAdmin)
         .map(({ href, label, Icono, contador }) => {
@@ -78,7 +78,7 @@ export function NavLateral({
               key={href}
               href={href}
               aria-current={activo ? "page" : undefined}
-              className={`flex items-center justify-between gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors duration-150 ${
+              className={`flex items-center justify-between gap-3 rounded-lg px-3.5 py-2.5 text-sm pointer-coarse:py-3 font-medium transition-colors duration-150 ${
                 activo
                   ? "bg-brand text-white"
                   : "text-ink-soft hover:bg-sunk hover:text-ink"

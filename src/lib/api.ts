@@ -100,6 +100,10 @@ export type Candidate = {
   last_candidate_message_at: string | null;
   created_at: string;
   tenant_id: string | null;
+  /** HITL: el bot no le contesta a este candidato; lo atiende una persona. */
+  bot_paused?: boolean;
+  /** Motivo por el que el bot pidió una persona (se limpia al reanudar). */
+  human_escalation_reason?: string | null;
   tenant_name: string | null;
   bot_handle: string | null;
   /** Usuarios (rol client) con ese bot asignado. Vacio = sin dueno todavia. */
@@ -173,6 +177,14 @@ export type Message = {
   created_at: string;
   /** Trae imagen adjunta (captura del referido): se pide a /api/media/{id}. */
   has_media?: boolean;
+  /** Tipo de adjunto. null con has_media = captura del referido (imagen). */
+  media_kind?: "image" | "document" | "voice" | "audio" | null;
+  /** Nombre original del archivo (documentos y audios). */
+  media_name?: string | null;
+  /** Persona que lo escribió desde el panel (HITL). null = el bot. */
+  author_name?: string | null;
+  /** Aviso automático enviado con el bot pausado (vacante, resultado de referido). */
+  is_automatic?: boolean;
 };
 
 export type ImprovementCase = {
@@ -494,6 +506,20 @@ export const getCandidate = (id: string, channel?: "telegram" | "whatsapp") => {
 export const confirmReferral = (id: string) =>
   request<Candidate>(`/api/candidates/${id}/confirm-referral`, { method: "POST" });
 
+/** HITL: pausa o reanuda el bot para un candidato. */
+export const setCandidateBot = (id: string, active: boolean) =>
+  request<{ bot_paused: boolean }>(`/api/candidates/${id}/bot`, {
+    method: "POST",
+    body: JSON.stringify({ active }),
+  });
+
+/** HITL: una persona le escribe al candidato (sale por el bot; pausa el bot). */
+export const sendOperatorMessage = (id: string, text: string) =>
+  request<{ id: number; created_at: string; author_name: string; bot_paused: boolean }>(
+    `/api/candidates/${id}/messages`,
+    { method: "POST", body: JSON.stringify({ text }) },
+  );
+
 export const listImprovementCases = (candidateId: string) =>
   request<ImprovementCase[]>(`/api/candidates/${candidateId}/improvements`);
 
@@ -668,9 +694,17 @@ export type Notificacion = {
   id: number;
   tenant_id: string;
   tenant_name: string | null;
-  kind: "credits_low" | "credits_depleted" | "credits_recharged" | "referral_success";
+  kind:
+    | "credits_low"
+    | "credits_depleted"
+    | "credits_recharged"
+    | "referral_success"
+    | "human_escalation"
+    | "candidate_waiting";
   title: string;
   body: string;
+  /** Extra según el tipo; los de un candidato traen candidate_id. */
+  data?: { candidate_id?: string } | null;
   created_at: string;
   unread: boolean;
 };
@@ -683,4 +717,21 @@ export const markNotificationsRead = (ids?: number[]) =>
   request<{ ok: boolean }>("/api/notifications/read", {
     method: "POST",
     body: JSON.stringify({ ids: ids ?? null }),
+  });
+
+/** PWA: clave pública VAPID del core (404 si el push no está configurado). */
+export const getPushPublicKey = () => request<{ key: string }>("/api/push/public-key");
+
+export type PushSubscriptionBody = { endpoint: string; keys: { p256dh: string; auth: string } };
+
+export const savePushSubscription = (sub: PushSubscriptionBody) =>
+  request<{ ok: boolean }>("/api/push/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(sub),
+  });
+
+export const deletePushSubscription = (endpoint: string) =>
+  request<{ ok: boolean }>("/api/push/subscriptions/delete", {
+    method: "POST",
+    body: JSON.stringify({ endpoint }),
   });

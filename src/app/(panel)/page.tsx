@@ -18,6 +18,7 @@ import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
 import {
   IconoCandidatos,
+  IconoChevron,
   IconoConsulta,
   IconoEdificio,
   IconoEnviar,
@@ -63,17 +64,20 @@ function Kpi({
   iconoColor: string;
 }) {
   return (
-    <div className={`${CARD} flex flex-col justify-between p-5`}>
+    <div className={`${CARD} flex flex-col justify-between p-3.5 sm:p-5`}>
       <div className="flex items-start justify-between gap-2 text-ink-soft">
-        <span className="text-xs font-medium uppercase tracking-wider">{titulo}</span>
-        <Icono className={`h-5 w-5 shrink-0 ${iconoColor}`} />
+        {/* En movil el titulo reserva dos lineas: asi los numeros de cada fila quedan alineados. */}
+        <span className="text-[11px] font-medium uppercase leading-tight tracking-wider max-sm:min-h-[2lh] sm:text-xs">
+          {titulo}
+        </span>
+        <Icono className={`h-4 w-4 shrink-0 sm:h-5 sm:w-5 ${iconoColor}`} />
       </div>
-      <div className="my-3">
-        <div className="text-3xl font-bold tracking-tight tabular-nums text-brand">
+      <div className="my-2 sm:my-3">
+        <div className="text-2xl font-bold tracking-tight tabular-nums text-brand sm:text-3xl">
           {valor.toLocaleString("es")}
         </div>
       </div>
-      <div className={`text-xs font-medium ${pieTono === "ok" ? "text-ok" : "text-ink-soft"}`}>
+      <div className={`text-[11px] font-medium leading-snug sm:text-xs ${pieTono === "ok" ? "text-ok" : "text-ink-soft"}`}>
         {pie}
       </div>
     </div>
@@ -96,6 +100,68 @@ const CANALES = ([
   { channel: "telegram", label: "Bot Telegram", Icono: IconoEnviar, color: "text-sky-600" },
 ] as const).filter((c) => esCanalActivo(c.channel));
 
+function estadoCanal(ch?: TenantChannel) {
+  const activo = ch?.active ?? false;
+  return {
+    estado: !ch ? "Sin conectar" : activo ? "Activo" : "En pausa",
+    estadoTexto: !ch ? "text-ink-faint" : activo ? "text-ok-ink" : "text-warn-ink",
+    estadoPunto: !ch ? "bg-ink-faint/50" : activo ? "bg-ok" : "bg-warn",
+  };
+}
+
+function colorCreditos(f: Fila) {
+  if (!f.creditos?.alerta) return "text-brand";
+  return f.creditos.nivel === "agotado" ? "text-bad-ink" : "text-warn-ink";
+}
+
+const textoCreditos = (f: Fila) =>
+  f.creditos?.remaining_usd == null ? "—" : `US$ ${f.creditos.remaining_usd.toFixed(2)}`;
+
+const textoCandidatos = (f: Fila) =>
+  f.candidatos == null ? "—" : `${f.candidatos.toLocaleString("es")} candidatos`;
+
+/** Movil: el cliente entra en dos lineas. Nombre lleva al detalle; estado y cifras a la vista. */
+function FilaClienteCompacta({ f }: { f: Fila }) {
+  return (
+    <div className="flex flex-col gap-2 px-4 py-3 sm:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={`/candidatos?bot=${f.id}`}
+          className="inline-flex min-w-0 items-center gap-1 rounded-control text-sm font-semibold text-brand"
+        >
+          <span className="truncate">{f.nombre}</span>
+          <IconoChevron className="h-4 w-4 shrink-0 -rotate-90 text-ink-faint" />
+        </Link>
+        <span className="flex shrink-0 items-center gap-3">
+          {CANALES.map(({ channel, label, Icono, color }) => {
+            const ch = f.channels.find((c) => c.channel === channel);
+            const { estado, estadoTexto, estadoPunto } = estadoCanal(ch);
+            return (
+              <span
+                key={channel}
+                title={label}
+                className={`inline-flex items-center gap-1 text-[11px] font-medium ${estadoTexto}`}
+              >
+                <Icono className={`h-3.5 w-3.5 ${ch ? color : "text-ink-faint"}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${estadoPunto}`} aria-hidden />
+                {estado}
+              </span>
+            );
+          })}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 text-xs text-ink-soft tabular-nums">
+          <span className="font-semibold text-brand">{textoCandidatos(f)}</span>
+          {" · "}
+          <span className={`font-semibold ${colorCreditos(f)}`}>{textoCreditos(f)}</span> créditos
+        </p>
+        <RenovarSesionBoton tenantId={f.id} />
+      </div>
+    </div>
+  );
+}
+
 function TarjetaBot({
   label,
   Icono,
@@ -109,10 +175,7 @@ function TarjetaBot({
   ch?: TenantChannel;
   atendidos?: number;
 }) {
-  const activo = ch?.active ?? false;
-  const estado = !ch ? "Sin conectar" : activo ? "Activo" : "En pausa";
-  const estadoTexto = !ch ? "text-ink-faint" : activo ? "text-ok-ink" : "text-warn-ink";
-  const estadoPunto = !ch ? "bg-ink-faint/50" : activo ? "bg-ok" : "bg-warn";
+  const { estado, estadoTexto, estadoPunto } = estadoCanal(ch);
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-line/50 bg-sunk/70 p-3">
@@ -135,55 +198,52 @@ function TarjetaBot({
 
 function FilaCliente({ f }: { f: Fila }) {
   return (
-    <div className="flex flex-col justify-between gap-5 p-6 transition-colors hover:bg-sunk/40 lg:flex-row lg:items-center">
-      <div className="w-64 shrink-0">
-        <div className="text-sm font-semibold text-brand">{f.nombre}</div>
-      </div>
-
-      <div className={`grid flex-1 grid-cols-1 gap-4 ${CANALES.length > 1 ? "sm:grid-cols-2" : ""}`}>
-        {CANALES.map(({ channel, label, Icono, color }) => (
-          <TarjetaBot
-            key={channel}
-            label={label}
-            Icono={Icono}
-            color={color}
-            ch={f.channels.find((c) => c.channel === channel)}
-            atendidos={f.porCanal[channel]}
-          />
-        ))}
-      </div>
-
-      <div className="flex shrink-0 items-center justify-between gap-4 pt-2 lg:justify-end lg:pt-0">
-        <div className="text-right">
-          <div className="text-xs font-medium text-ink-soft">Créditos bot</div>
-          <div
-            className={`text-sm font-bold tabular-nums ${
-              f.creditos?.alerta
-                ? f.creditos.nivel === "agotado"
-                  ? "text-bad-ink"
-                  : "text-warn-ink"
-                : "text-brand"
-            }`}
-          >
-            {f.creditos?.remaining_usd == null
-              ? "—"
-              : `US$ ${f.creditos.remaining_usd.toFixed(2)}`}
+    // Un solo hijo por cliente: asi divide-y separa clientes y no deja linea de mas.
+    <div>
+      <FilaClienteCompacta f={f} />
+      <div className="flex flex-col justify-between gap-5 p-6 transition-colors hover:bg-sunk/40 max-sm:hidden lg:flex-row lg:items-center">
+        <div className="shrink-0 lg:w-64">
+          <div className="text-sm font-semibold text-brand">{f.nombre}</div>
+        </div>
+  
+        <div className={`grid flex-1 grid-cols-1 gap-4 ${CANALES.length > 1 ? "sm:grid-cols-2" : ""}`}>
+          {CANALES.map(({ channel, label, Icono, color }) => (
+            <TarjetaBot
+              key={channel}
+              label={label}
+              Icono={Icono}
+              color={color}
+              ch={f.channels.find((c) => c.channel === channel)}
+              atendidos={f.porCanal[channel]}
+            />
+          ))}
+        </div>
+  
+        {/* En movil: cifras en una fila y acciones debajo, a la derecha. */}
+        <div className="flex shrink-0 flex-wrap items-center gap-4 pt-2 lg:flex-nowrap lg:justify-end lg:pt-0">
+          <div className="flex gap-4">
+            <div className="lg:text-right">
+              <div className="text-xs font-medium text-ink-soft">Créditos bot</div>
+              <div className={`text-sm font-bold tabular-nums ${colorCreditos(f)}`}>
+                {textoCreditos(f)}
+              </div>
+            </div>
+            <div className="lg:text-right">
+              <div className="text-xs font-medium text-ink-soft">Total Cliente</div>
+              <div className="text-sm font-bold tabular-nums text-brand">{textoCandidatos(f)}</div>
+            </div>
+          </div>
+          <div className="ml-auto flex items-start gap-4">
+            <RenovarSesionBoton tenantId={f.id} />
+            <Link
+              href={`/candidatos?bot=${f.id}`}
+              title="Ver detalle"
+              className="whitespace-nowrap rounded-lg border border-line-strong px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-sunk"
+            >
+              Detalle
+            </Link>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs font-medium text-ink-soft">Total Cliente</div>
-          <div className="text-sm font-bold tabular-nums text-brand">
-            {f.candidatos == null ? "—" : `${f.candidatos.toLocaleString("es")} candidatos`}
-          </div>
-        </div>
-        <RenovarSesionBoton tenantId={f.id} />
-        <Link
-          href={`/candidatos?bot=${f.id}`}
-          title="Ver detalle"
-          className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-sunk"
-        >
-          Detalle
-        </Link>
       </div>
     </div>
   );
@@ -326,7 +386,7 @@ export default async function Home({
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         <Kpi
           titulo="Total Candidatos"
           valor={metrics.total}

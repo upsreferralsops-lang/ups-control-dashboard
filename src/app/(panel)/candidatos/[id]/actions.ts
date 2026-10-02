@@ -5,9 +5,52 @@ import {
   confirmReferral,
   createImprovementCase,
   getCandidate,
+  sendOperatorMessage,
+  setCandidateBot,
   setImprovementCaseActive,
   type Message,
 } from "@/lib/api";
+
+function revalidarCandidato(candidateId: string) {
+  revalidatePath(`/candidatos/${candidateId}`, "layout");
+  revalidatePath("/candidatos");
+}
+
+/** HITL: el bot deja de contestarle a este candidato, o vuelve a hacerlo. */
+export async function cambiarBot(
+  candidateId: string,
+  activo: boolean,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await setCandidateBot(candidateId, activo);
+    revalidarCandidato(candidateId);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "No se pudo cambiar el estado del bot.",
+    };
+  }
+}
+
+/** HITL: una persona le escribe al candidato. El core pausa el bot solo. */
+export async function enviarMensaje(
+  candidateId: string,
+  texto: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const limpio = texto.trim();
+  if (!limpio) return { ok: false, error: "Escribí un mensaje." };
+  try {
+    await sendOperatorMessage(candidateId, limpio);
+    revalidarCandidato(candidateId);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "No se pudo enviar el mensaje.",
+    };
+  }
+}
 
 /**
  * El "ya lo referí" del operador. Es la única vía manual a sent_confirmed:

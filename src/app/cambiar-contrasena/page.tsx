@@ -22,7 +22,7 @@ export default async function CambiarContrasenaPage() {
   }
 
   return (
-    <div className="tema-fijo flex min-h-screen items-center justify-center bg-paper px-4">
+    <div className="tema-fijo flex min-h-dvh items-center justify-center bg-paper px-4">
       <div className="w-full max-w-md rounded-panel border border-line bg-surface p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-ink">Elegi tu contrasena</h1>
         <p className="mt-2 text-sm text-ink-muted">

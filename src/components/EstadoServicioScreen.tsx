@@ -73,7 +73,7 @@ export function EstadoServicioScreen({
       : "border-bad-border bg-bad-wash";
 
   return (
-    <div className="tema-fijo grid min-h-screen bg-paper lg:grid-cols-[minmax(20rem,28rem)_1fr]">
+    <div className="tema-fijo grid min-h-dvh bg-paper lg:grid-cols-[minmax(20rem,28rem)_1fr]">
       <aside className="relative hidden flex-col justify-between bg-rail p-10 text-rail-ink lg:flex">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-3">

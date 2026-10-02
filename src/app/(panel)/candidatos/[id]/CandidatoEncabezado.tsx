@@ -4,6 +4,7 @@ import { IconoVolver } from "@/lib/icons";
 import { fullName, presentacionReferido } from "@/lib/status";
 import { Estado, Etiqueta } from "@/components/ui";
 import { CandidatoSubnav } from "./CandidatoSubnav";
+import { ControlBot } from "./ControlBot";
 import { MOSTRAR_CANAL } from "@/lib/canales";
 
 export function CandidatoEncabezado({
@@ -32,6 +33,11 @@ export function CandidatoEncabezado({
         {candidate.tenant_name && <Etiqueta>{candidate.tenant_name}</Etiqueta>}
       </div>
       <p className="mt-1.5 max-w-prose text-sm text-ink-soft">{estado.help}</p>
+      <ControlBot
+        candidateId={candidateId}
+        pausado={Boolean(candidate.bot_paused)}
+        motivoEscalada={candidate.human_escalation_reason ?? null}
+      />
 
       <CandidatoSubnav candidateId={candidateId} />
     </div>

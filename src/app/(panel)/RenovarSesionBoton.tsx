@@ -13,7 +13,7 @@ export function RenovarSesionBoton({ tenantId }: { tenantId: string }) {
         type="button"
         disabled={pendiente}
         title="Re-login UPS para obtener un token de sesión nuevo"
-        className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-sunk disabled:cursor-not-allowed disabled:opacity-60"
+        className="whitespace-nowrap rounded-lg border border-line-strong px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-sunk disabled:cursor-not-allowed disabled:opacity-60"
         onClick={() =>
           iniciar(async () => {
             setMensaje(null);

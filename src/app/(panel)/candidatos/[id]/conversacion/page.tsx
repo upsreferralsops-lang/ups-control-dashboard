@@ -86,6 +86,10 @@ export default async function CandidatoConversacionPage({
         focusMessageId={focusMessageId}
         canal={canalActivo}
         canalLabel={canalActivo === "whatsapp" ? "WhatsApp" : "Telegram"}
+        botPausado={Boolean(c.bot_paused)}
+        // Se escribe por el canal del propio candidato; un hilo vinculado
+        // (mismo correo en otro canal) es otro registro y se mira, no se escribe.
+        puedeEscribir={canalActivo === (c.channel || "telegram")}
       />
     </div>
   );

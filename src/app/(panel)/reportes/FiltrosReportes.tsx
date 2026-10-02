@@ -69,7 +69,8 @@ export function FiltrosReportes({
 
   return (
     <div
-      className={`grid min-w-0 grid-cols-1 gap-4 ${
+      // En movil dos por fila; si el ultimo queda solo, ocupa la fila entera.
+      className={`grid min-w-0 grid-cols-2 gap-3 max-sm:[&>:last-child:nth-child(odd)]:col-span-2 sm:gap-4 ${
         tenants.length > 1 ? "sm:grid-cols-3" : "sm:grid-cols-2"
       }`}
     >

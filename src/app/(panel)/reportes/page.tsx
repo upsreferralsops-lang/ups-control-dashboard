@@ -197,12 +197,16 @@ export default async function ReportesPage({
         />
       </Bloque>
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {/* En movil dos columnas; la quinta metrica ocupa la fila entera. */}
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
         {metricas.map((m) => (
-          <div key={m.label} className="min-w-0 rounded-panel border border-line bg-surface p-4 sm:p-5">
-            <p className="text-sm font-medium text-ink-soft">{m.label}</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight tabular-nums text-ink">{m.valor}</p>
-            <p className="mt-1 text-xs font-medium text-ink-soft">{m.pie}</p>
+          <div
+            key={m.label}
+            className="min-w-0 rounded-panel border border-line bg-surface p-3.5 max-sm:last:odd:col-span-2 sm:p-5"
+          >
+            <p className="text-xs font-medium leading-tight text-ink-soft sm:text-sm">{m.label}</p>
+            <p className="mt-1.5 text-2xl font-bold tracking-tight tabular-nums text-ink sm:mt-2 sm:text-3xl">{m.valor}</p>
+            <p className="mt-1 text-[11px] font-medium leading-snug text-ink-soft sm:text-xs">{m.pie}</p>
           </div>
         ))}
       </div>
@@ -217,7 +221,7 @@ export default async function ReportesPage({
       </div>
 
       <Bloque titulo="Embudo de conversión" className="min-w-0">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {[
             { label: "Iniciados", valor: reportes.iniciados },
             {
@@ -231,9 +235,11 @@ export default async function ReportesPage({
               tasa: fmtPct(reportes.referidos, reportes.datos_completos || reportes.iniciados),
             },
           ].map((paso) => (
-            <div key={paso.label} className="min-w-0 rounded-lg bg-sunk px-4 py-3 text-center">
-              <span className="block text-xs font-semibold text-ink-soft">{paso.label}</span>
-              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink">
+            <div key={paso.label} className="min-w-0 rounded-lg bg-sunk px-2 py-2.5 text-center sm:px-4 sm:py-3">
+              <span className="block text-[11px] font-semibold leading-tight text-ink-soft max-sm:min-h-[2lh] sm:text-xs">
+                {paso.label}
+              </span>
+              <span className="mt-1 block text-xl font-bold tabular-nums text-ink sm:text-2xl">
                 {fmtEntero(paso.valor)}
               </span>
               {"tasa" in paso && paso.tasa && (

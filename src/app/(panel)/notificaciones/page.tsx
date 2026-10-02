@@ -2,6 +2,7 @@ import { getNotifications, type NotificacionesSnapshot } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
 import { ListaNotificaciones } from "./Lista";
+import { ActivarNotificaciones } from "./ActivarNotificaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function NotificacionesPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <h1 className="text-xl font-semibold tracking-tight text-ink">Notificaciones</h1>
+      <ActivarNotificaciones />
       {datos ? (
         <ListaNotificaciones items={datos.items} noLeidas={datos.unread} />
       ) : (

@@ -49,11 +49,13 @@ export async function GET(
     return new Response("Imagen vacia", { status: 502 });
   }
 
-  return new Response(bytes, {
-    headers: {
-      "Content-Type": upstream.headers.get("Content-Type") ?? "image/png",
-      "Content-Length": String(bytes.byteLength),
-      "Cache-Control": upstream.headers.get("Cache-Control") ?? "private, max-age=86400",
-    },
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": upstream.headers.get("Content-Type") ?? "image/png",
+    "Content-Length": String(bytes.byteLength),
+    "Cache-Control": upstream.headers.get("Cache-Control") ?? "private, max-age=86400",
+  };
+  // Documentos del chat: se descargan con su nombre original.
+  const disposicion = upstream.headers.get("Content-Disposition");
+  if (disposicion) headers["Content-Disposition"] = disposicion;
+  return new Response(bytes, { headers });
 }
