@@ -23,7 +23,9 @@ export const requireSession = cache(async (): Promise<Session> => {
 
   try {
     const session = await getSession();
-    if (session.user.must_change_password) {
+    // Un admin mirando como otro usuario no elige la contrasena de ese usuario:
+    // la clave temporal la cambia el dueño cuando entra el mismo.
+    if (session.user.must_change_password && !session.impersonation) {
       redirect("/cambiar-contrasena");
     }
     return session;
