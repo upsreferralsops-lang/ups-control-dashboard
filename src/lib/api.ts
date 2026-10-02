@@ -439,8 +439,11 @@ export type TenantCredits = {
   tenant_id: string;
   slug?: string | null;
   name?: string | null;
+  /** Saldo de la key si tiene tope; si no, el de la cuenta (igual para todas sus keys). */
   remaining_usd: number | null;
   limit_usd: number | null;
+  /** Lo que gastó la key de este bot. */
+  usage_usd?: number | null;
   threshold_usd: number;
   nivel: "ok" | "bajo" | "agotado" | "desconocido";
   alerta: boolean;

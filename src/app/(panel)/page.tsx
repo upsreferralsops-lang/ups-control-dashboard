@@ -117,6 +117,14 @@ function colorCreditos(f: Fila) {
 const textoCreditos = (f: Fila) =>
   f.creditos?.remaining_usd == null ? "—" : `US$ ${f.creditos.remaining_usd.toFixed(2)}`;
 
+/** Consumo de la key del bot: lo que distingue a un cliente de otro. El
+ *  saldo es de la cuenta de OpenRouter y sale igual para todas sus keys. */
+const textoConsumo = (f: Fila) => {
+  const usd = f.creditos?.usage_usd;
+  if (usd == null) return "—";
+  return `US$ ${usd > 0 && usd < 0.01 ? usd.toFixed(3) : usd.toFixed(2)}`;
+};
+
 const textoCandidatos = (f: Fila) =>
   f.candidatos == null ? "—" : `${f.candidatos.toLocaleString("es")} candidatos`;
 
@@ -154,7 +162,10 @@ function FilaClienteCompacta({ f }: { f: Fila }) {
         <p className="min-w-0 text-xs text-ink-soft tabular-nums">
           <span className="font-semibold text-brand">{textoCandidatos(f)}</span>
           {" · "}
-          <span className={`font-semibold ${colorCreditos(f)}`}>{textoCreditos(f)}</span> créditos
+          <span className="font-semibold text-brand">{textoConsumo(f)}</span> consumo
+          {f.creditos?.alerta ? (
+            <span className={`font-semibold ${colorCreditos(f)}`}> · saldo {textoCreditos(f)}</span>
+          ) : null}
         </p>
         <RenovarSesionBoton tenantId={f.id} />
       </div>
@@ -223,9 +234,13 @@ function FilaCliente({ f }: { f: Fila }) {
         <div className="flex shrink-0 flex-wrap items-center gap-4 pt-2 lg:flex-nowrap lg:justify-end lg:pt-0">
           <div className="flex gap-4">
             <div className="lg:text-right">
-              <div className="text-xs font-medium text-ink-soft">Créditos bot</div>
-              <div className={`text-sm font-bold tabular-nums ${colorCreditos(f)}`}>
-                {textoCreditos(f)}
+              <div className="text-xs font-medium text-ink-soft">Consumo bot</div>
+              <div className="text-sm font-bold tabular-nums text-brand">{textoConsumo(f)}</div>
+              <div
+                className={`text-[11px] tabular-nums ${f.creditos?.alerta ? `font-semibold ${colorCreditos(f)}` : "text-ink-faint"}`}
+                title="Saldo de la cuenta de OpenRouter: es el mismo para todas sus keys"
+              >
+                saldo {textoCreditos(f)}
               </div>
             </div>
             <div className="lg:text-right">
