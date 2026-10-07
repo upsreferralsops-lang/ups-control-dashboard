@@ -705,7 +705,9 @@ export type Notificacion = {
     | "credits_recharged"
     | "referral_success"
     | "human_escalation"
-    | "candidate_waiting";
+    | "candidate_waiting"
+    | "ups_session_renewed"
+    | "ups_session_failed";
   title: string;
   body: string;
   /** Extra según el tipo; los de un candidato traen candidate_id. */

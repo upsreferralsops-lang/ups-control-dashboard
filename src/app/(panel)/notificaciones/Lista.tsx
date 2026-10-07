@@ -13,6 +13,8 @@ const TONO: Record<Notificacion["kind"], { Icono: typeof IconoOk; caja: string }
   referral_success: { Icono: IconoOk, caja: "bg-sunk text-ink" },
   human_escalation: { Icono: IconoAlerta, caja: "bg-attention-wash text-attention-ink" },
   candidate_waiting: { Icono: IconoConversacion, caja: "bg-signal-wash text-signal-ink" },
+  ups_session_renewed: { Icono: IconoOk, caja: "bg-ok-wash text-ok-ink" },
+  ups_session_failed: { Icono: IconoAlerta, caja: "bg-bad-wash text-bad-ink" },
 };
 
 function cuando(iso: string): string {
