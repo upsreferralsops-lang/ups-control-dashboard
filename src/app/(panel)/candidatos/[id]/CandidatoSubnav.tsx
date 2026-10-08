@@ -25,7 +25,8 @@ export function CandidatoSubnav({ candidateId }: { candidateId: string }) {
 
   return (
     <nav
-      className="mt-4 flex gap-1 overflow-x-auto border-b border-line"
+      // Celular: control segmentado, como el switch Chat / Historial del asistente.
+      className="mt-4 flex gap-1 overflow-x-auto border-b border-line max-md:mt-2 max-md:rounded-control max-md:border-0 max-md:bg-sunk max-md:p-0.5"
       aria-label="Secciones del candidato"
     >
       {tabs.map((tab) => {
@@ -39,9 +40,9 @@ export function CandidatoSubnav({ candidateId }: { candidateId: string }) {
             key={tab.label}
             href={href}
             className={[
-              "-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150",
+              "-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 max-md:mb-0 max-md:flex-1 max-md:rounded-control max-md:border-0 max-md:text-center max-md:font-semibold",
               active
-                ? "border-accent text-ink"
+                ? "border-accent text-ink max-md:bg-surface max-md:shadow-sm"
                 : "border-transparent text-ink-soft hover:border-line hover:text-ink",
             ].join(" ")}
             aria-current={active ? "page" : undefined}

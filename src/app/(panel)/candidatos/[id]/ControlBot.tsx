@@ -12,11 +12,9 @@ import { cambiarBot } from "./actions";
 export function ControlBot({
   candidateId,
   pausado,
-  motivoEscalada,
 }: {
   candidateId: string;
   pausado: boolean;
-  motivoEscalada: string | null;
 }) {
   const [pendiente, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +28,8 @@ export function ControlBot({
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-2">
-      {pausado && motivoEscalada && (
-        <Aviso tono="warn" titulo="El bot pidió que lo atienda una persona">
-          {motivoEscalada}
-        </Aviso>
-      )}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 max-md:flex-nowrap max-md:justify-between">
         <span
           className={`inline-flex items-center gap-1.5 text-sm font-medium ${
             pausado ? "text-warn-ink" : "text-ok-ink"
@@ -46,7 +39,13 @@ export function ControlBot({
             className={`h-2 w-2 rounded-full ${pausado ? "bg-warn" : "bg-ok"}`}
             aria-hidden
           />
-          {pausado ? "Bot pausado · lo atiende una persona" : "Bot activo"}
+          {pausado ? (
+            <span>
+              Bot pausado<span className="max-sm:hidden"> · lo atiende una persona</span>
+            </span>
+          ) : (
+            "Bot activo"
+          )}
         </span>
         <Boton
           variante={pausado ? "primario" : "neutro"}
