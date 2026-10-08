@@ -17,6 +17,7 @@ const ESTADOS = new Set<ReferralStatus>([
   "not_started",
   "duplicate_or_error",
   "search_failed",
+  "rejected",
 ]);
 
 function isoDia(d: Date) {

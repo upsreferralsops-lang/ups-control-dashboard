@@ -272,6 +272,7 @@ const PUNTO_ESTADO: Record<ReferralStatus, string> = {
   duplicate_or_error: "bg-attention",
   search_failed: "bg-bad",
   not_started: "bg-info",
+  rejected: "bg-bad",
 };
 
 /** "8 min" -> "Hace 8 min"; "recién"/"ayer" ya se leen solos. */

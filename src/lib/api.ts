@@ -22,7 +22,8 @@ export type ReferralStatus =
   | "waiting_position"
   | "sent_confirmed"
   | "duplicate_or_error"
-  | "search_failed";
+  | "search_failed"
+  | "rejected";
 
 export type SessionUser = {
   id: string;
@@ -75,6 +76,8 @@ export type Metrics = {
   en_lista_de_espera: number;
   abandonados: number;
   en_aplicacion: number;
+  /** Rechazados tras la entrevista (tambien cuentan en referidos_ok). */
+  rechazados?: number;
   total: number;
   con_datos_sensibles: number;
 };
@@ -104,6 +107,8 @@ export type Candidate = {
   bot_paused?: boolean;
   /** Motivo por el que el bot pidió una persona (se limpia al reanudar). */
   human_escalation_reason?: string | null;
+  /** Contó que lo rechazaron tras la entrevista: 90 días sin poder aplicar. */
+  rejected_at?: string | null;
   tenant_name: string | null;
   bot_handle: string | null;
   /** Usuarios (rol client) con ese bot asignado. Vacio = sin dueno todavia. */

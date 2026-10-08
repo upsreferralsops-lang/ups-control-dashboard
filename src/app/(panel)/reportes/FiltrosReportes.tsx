@@ -19,6 +19,7 @@ const ESTADOS: { value: ReferralStatus | "todos"; label: string }[] = [
   { value: "waiting_position", label: "En espera" },
   { value: "not_started", label: "En proceso de aplicación" },
   { value: "duplicate_or_error", label: "Fallidos" },
+  { value: "rejected", label: "Rechazados" },
   { value: "search_failed", label: "Búsqueda falló" },
 ];
 

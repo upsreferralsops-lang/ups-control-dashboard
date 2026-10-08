@@ -21,6 +21,7 @@ const FILTROS: { value: ReferralStatus | "todos"; label: string }[] = [
   { value: "sent_confirmed", label: "Referidos" },
   { value: "waiting_position", label: "En espera" },
   { value: "duplicate_or_error", label: "Fallidos" },
+  { value: "rejected", label: "Rechazados" },
   { value: "search_failed", label: "Búsqueda falló" },
   { value: "not_started", label: "Sin referir" },
 ];
@@ -30,7 +31,8 @@ const RANGO_ESTADO: Record<string, number> = {
   duplicate_or_error: 1,
   waiting_position: 2,
   not_started: 3,
-  sent_confirmed: 4,
+  rejected: 4,
+  sent_confirmed: 5,
 };
 
 const ORDENES = {
@@ -61,6 +63,12 @@ function Barra({ metrics, cola }: { metrics: Metrics; cola: (v: string) => strin
       value: metrics.referidos_fallidos,
       color: "bg-bad",
       filtro: "duplicate_or_error",
+    },
+    {
+      label: "Rechazados",
+      value: metrics.rechazados ?? 0,
+      color: "bg-attention",
+      filtro: "rejected",
     },
     { label: "Abandonados", value: metrics.abandonados, color: "bg-ink-faint", filtro: null },
     { label: "Aplicando", value: metrics.en_aplicacion, color: "bg-info", filtro: null },

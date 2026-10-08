@@ -17,6 +17,15 @@ export function CandidatoEncabezado({
   const estado = presentacionReferido(candidate);
   const pausado = Boolean(candidate.bot_paused);
   const motivoEscalada = candidate.human_escalation_reason ?? null;
+  // Rechazado: 90 días sin poder aplicar (misma regla que app/logic.py del core).
+  const puedeVolverDesde =
+    candidate.referral_status === "rejected" && candidate.rejected_at
+      ? new Date(new Date(candidate.rejected_at).getTime() + 90 * 86_400_000).toLocaleDateString("es", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : null;
 
   // Dos bloques hermanos (no uno): la barra fija del celular tiene que ser
   // hija del contenedor de toda la pagina, o se suelta al terminar el encabezado.
@@ -38,6 +47,11 @@ export function CandidatoEncabezado({
           {candidate.tenant_name && <Etiqueta>{candidate.tenant_name}</Etiqueta>}
         </div>
         <p className="mt-1.5 max-w-prose text-sm text-ink-soft">{estado.help}</p>
+        {puedeVolverDesde && (
+          <p className="mt-1 text-sm font-medium text-bad-ink">
+            Puede volver a aplicar desde el {puedeVolverDesde}.
+          </p>
+        )}
         {pausado && motivoEscalada && (
           <div className="mt-3">
             <Aviso tono="warn" titulo="El bot pidió que lo atienda una persona">

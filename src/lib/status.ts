@@ -37,6 +37,12 @@ export const REFERRAL_STATUS = {
     badge: "border-info-border bg-info-wash text-info-ink",
     Icono: IconoNeutro,
   },
+  rejected: {
+    label: "Rechazado",
+    help: "Lo entrevistaron y la empresa decidió no contratarlo. No puede volver a aplicar a ninguna posición durante 90 días.",
+    badge: "border-bad-border bg-bad-wash text-bad-ink",
+    Icono: IconoError,
+  },
   search_failed: {
     label: "Búsqueda falló",
     help: "No se pudo consultar las vacantes, así que no sabemos si hay cupos. Revisá la sesión del portal y reintentá.",
