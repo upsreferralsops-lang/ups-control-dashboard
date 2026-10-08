@@ -237,7 +237,10 @@ export function ConversacionPanel({
     const el = listaRef.current;
     if (!el) return;
     const irAlFinal = () => {
-      el.scrollTop = el.scrollHeight;
+      // Escritorio: la lista scrollea por dentro. Celular: scrollea la pagina
+      // (un solo scroll), asi que se lleva el ultimo mensaje a la vista.
+      if (el.scrollHeight > el.clientHeight + 1) el.scrollTop = el.scrollHeight;
+      else el.lastElementChild?.scrollIntoView({ block: "end" });
     };
     irAlFinal();
     // Doble frame: el alto flex a veces se resuelve un tick despues.
@@ -346,9 +349,10 @@ export function ConversacionPanel({
           </Boton>
         </div>
       }
-      // En movil el chat ocupa la pantalla y scrollea por dentro, no la pagina entera.
-      className="flex min-h-0 min-w-0 flex-col max-lg:h-[calc(100dvh-5rem)] lg:h-full"
-      cuerpoClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-5"
+      // Celular: un solo scroll, el de la pagina. El chat crece y la caja de
+      // mensaje queda pegada abajo. Escritorio: el chat scrollea por dentro.
+      className="flex min-h-0 min-w-0 flex-col md:h-full"
+      cuerpoClassName="flex min-h-0 flex-1 flex-col gap-3 p-5 max-md:px-4 md:overflow-hidden"
     >
       {marcando && (
         <p className="shrink-0 rounded-control border border-warn-border bg-signal-wash px-3 py-2 text-xs text-signal-ink">
@@ -425,7 +429,10 @@ export function ConversacionPanel({
         )}
       </div>
 
-      <div ref={listaRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+      <div
+        ref={listaRef}
+        className="flex min-h-0 flex-1 flex-col gap-3 pr-1 max-md:[&>*]:scroll-mb-32 md:overflow-y-auto"
+      >
         {msgs.length === 0 && (
           <p className="py-8 text-center text-sm text-ink-soft">Todavía no hay mensajes.</p>
         )}
@@ -732,7 +739,7 @@ function EscribirAlCandidato({
 
   return (
     <form
-      className="flex shrink-0 flex-col gap-1.5 border-t border-line pt-3"
+      className="flex shrink-0 flex-col gap-1.5 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       onSubmit={(e) => {
         e.preventDefault();
         void enviar();

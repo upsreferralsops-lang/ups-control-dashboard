@@ -63,7 +63,7 @@ export default async function CandidatoConversacionPage({
   const canales = canalesConversacion(detalle).filter((v) => esCanalActivo(v.channel));
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 md:overflow-hidden">
       {sinLeer.length > 0 ? <MarcarLeidasAlVer ids={sinLeer} /> : null}
       {c.sensitive_data_received ? (
         <div className="shrink-0">
