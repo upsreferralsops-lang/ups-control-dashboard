@@ -548,6 +548,7 @@ export function BancoReglas({
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}
             placeholder="Mensaje…"
+            enterKeyHint="send"
             disabled={probando}
           />
           <Boton type="submit" variante="primario" disabled={probando || !mensaje.trim()}>

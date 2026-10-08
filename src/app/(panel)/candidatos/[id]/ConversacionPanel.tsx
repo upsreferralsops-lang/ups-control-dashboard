@@ -812,11 +812,12 @@ function EscribirAlCandidato({
               setTexto(e.target.value);
               ajustarAlto(e.currentTarget);
             }}
+            // Enter envia tambien en el celular (lo pidieron los clientes, todos
+            // con iPhone): el teclado muestra "Enviar". Shift+Enter baja de linea
+            // con teclado fisico. isComposing: no cortar un dictado o autocorreccion.
+            enterKeyHint="send"
             onKeyDown={(e) => {
-              // Con teclado fisico Enter envia y Shift+Enter baja de linea; en el
-              // celular Enter es salto de linea y se envia con el boton.
-              if (e.key !== "Enter" || e.shiftKey) return;
-              if (!window.matchMedia("(pointer: fine)").matches) return;
+              if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
               e.preventDefault();
               void enviar();
             }}
