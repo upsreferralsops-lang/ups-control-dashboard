@@ -52,6 +52,8 @@ export function CandidatoEncabezado({
       <div className="shrink-0 max-md:sticky max-md:top-14 max-md:z-20 max-md:-mx-5 max-md:-mt-2 max-md:border-b max-md:border-line max-md:bg-paper max-md:px-5 max-md:py-2 sm:max-md:-mx-8 sm:max-md:px-8">
         <ControlBot candidateId={candidateId} pausado={pausado} />
         <CandidatoSubnav candidateId={candidateId} />
+        {/* La pestaña Conversación pone aca la lupa y «Marcar corrección» (portal). */}
+        <div id="barra-chat" className="md:hidden" />
       </div>
     </>
   );

@@ -1,12 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Message } from "@/lib/api";
 import { timeAgo } from "@/lib/status";
 import { Bloque, Boton, CAMPO } from "@/components/ui";
 import { IconoAdjuntar, IconoBuscar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
 import { crearMejora, enviarMensaje, leerConversacion } from "./actions";
+
+// El hueco de la barra fija del celular (CandidatoEncabezado). En el servidor
+// no existe: useSyncExternalStore evita el desfasaje de hidratacion.
+const sinSuscripcion = () => () => {};
+const BOTON_CHICO =
+  "grid h-8 w-8 shrink-0 place-items-center rounded-control text-ink-soft transition-colors hover:bg-sunk hover:text-ink disabled:opacity-40";
 
 const CAPTION_CAPTURA = "Captura del referido / apply en UPS";
 
@@ -200,6 +216,13 @@ export function ConversacionPanel({
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
+  const [buscarAbierto, setBuscarAbierto] = useState(false);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const barraChat = useSyncExternalStore(
+    sinSuscripcion,
+    () => document.getElementById("barra-chat"),
+    () => null,
+  );
   const firmaRef = useRef(firmaChat(conversation));
 
   useEffect(() => {
@@ -298,10 +321,6 @@ export function ConversacionPanel({
     [totalCoincidencias],
   );
 
-  const mensajesConCoincidencia = useMemo(() => {
-    if (!buscando) return 0;
-    return msgs.filter((m) => contarCoincidencias(m.text, q) > 0).length;
-  }, [msgs, buscando, q]);
 
   function cancelarMarcado() {
     setMarcando(false);
@@ -327,28 +346,116 @@ export function ConversacionPanel({
     });
   }
 
+  function abrirBusqueda() {
+    setBuscarAbierto(true);
+    // Se enfoca el campo visible (escritorio o celular), no el oculto.
+    requestAnimationFrame(() => inputsRef.current.find((el) => el?.offsetParent)?.focus());
+  }
+
+  function cerrarBusqueda() {
+    setBuscarAbierto(false);
+    setConsulta("");
+  }
+
+  // Como en WhatsApp/Telegram: una lupa; al tocarla la fila pasa a ser el buscador.
+  const herramientas = (i: number) =>
+    buscarAbierto ? (
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        <div className="relative min-w-0 flex-1">
+          <IconoBuscar className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+          <input
+            ref={(el) => {
+              inputsRef.current[i] = el;
+            }}
+            type="search"
+            enterKeyHint="search"
+            value={consulta}
+            onChange={(e) => setConsulta(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp" || (e.key === "Enter" && !e.nativeEvent.isComposing)) {
+                e.preventDefault();
+                ir(1); // mas antigua → subir en el chat
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                ir(-1); // mas reciente → bajar
+              } else if (e.key === "Escape") {
+                cerrarBusqueda();
+              }
+            }}
+            placeholder="Buscar en el chat…"
+            aria-label="Buscar en la conversación"
+            className={`${CAMPO} !min-h-8 w-full py-1.5 pl-8 pr-2 [&::-webkit-search-cancel-button]:hidden`}
+          />
+        </div>
+        <span
+          className="min-w-[3.25rem] text-center text-xs tabular-nums text-ink-soft"
+          aria-live="polite"
+        >
+          {buscando ? (totalCoincidencias === 0 ? "0 / 0" : `${activo + 1} / ${totalCoincidencias}`) : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => ir(1)}
+          disabled={totalCoincidencias === 0}
+          aria-label="Coincidencia más antigua"
+          title="Más antigua (↑)"
+          className={BOTON_CHICO}
+        >
+          <span className="text-sm leading-none" aria-hidden>
+            ↑
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => ir(-1)}
+          disabled={totalCoincidencias === 0}
+          aria-label="Coincidencia más reciente"
+          title="Más reciente (↓)"
+          className={BOTON_CHICO}
+        >
+          <span className="text-sm leading-none" aria-hidden>
+            ↓
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={cerrarBusqueda}
+          aria-label="Cerrar búsqueda"
+          title="Cerrar búsqueda"
+          className={BOTON_CHICO}
+        >
+          <IconoCerrar className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 max-md:flex-1">
+        <span className="text-xs tabular-nums text-ink-faint max-md:mr-auto">
+          {`${msgs.length} mensajes · ${timeAgo(msgs.at(-1)?.created_at ?? null)}`}
+        </span>
+        <button
+          type="button"
+          onClick={abrirBusqueda}
+          aria-label="Buscar en el chat"
+          title="Buscar en el chat"
+          className={`${BOTON_CHICO} border border-line bg-surface`}
+        >
+          <IconoBuscar className="h-4 w-4" />
+        </button>
+        <Boton
+          type="button"
+          variante={marcando ? "accent" : "neutro"}
+          className="!min-h-8 !px-2 !py-1 text-xs"
+          onClick={() => (marcando ? cancelarMarcado() : setMarcando(true))}
+        >
+          {marcando ? "Cancelar marcado" : "Marcar corrección"}
+        </Boton>
+      </div>
+    );
+
   return (
     <Bloque
       titulo={canalLabel ? `Conversación · ${canalLabel}` : "Conversación"}
-      extra={
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs tabular-nums text-ink-faint">
-            {buscando
-              ? totalCoincidencias === 0
-                ? `0 coincidencias · ${msgs.length} mensajes`
-                : `${totalCoincidencias} coincidencia${totalCoincidencias === 1 ? "" : "s"} · ${mensajesConCoincidencia} mensaje${mensajesConCoincidencia === 1 ? "" : "s"}`
-              : `${msgs.length} mensajes · ${timeAgo(msgs.at(-1)?.created_at ?? null)}`}
-          </span>
-          <Boton
-            type="button"
-            variante={marcando ? "accent" : "neutro"}
-            className="!min-h-7 !px-2 !py-1 text-xs"
-            onClick={() => (marcando ? cancelarMarcado() : setMarcando(true))}
-          >
-            {marcando ? "Cancelar marcado" : "Marcar corrección"}
-          </Boton>
-        </div>
-      }
+      extra={<div className="flex min-w-0 flex-1 justify-end max-md:hidden">{herramientas(0)}</div>}
       // Celular: un solo scroll, el de la pagina. El chat crece y la caja de
       // mensaje queda pegada abajo. Escritorio: el chat scrollea por dentro.
       className="flex min-h-0 min-w-0 flex-col md:h-full"
@@ -361,73 +468,11 @@ export function ConversacionPanel({
         </p>
       )}
 
-      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <IconoBuscar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            type="search"
-            value={consulta}
-            onChange={(e) => setConsulta(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowUp") {
-                e.preventDefault();
-                ir(1); // mas antigua → subir en el chat
-              } else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                ir(-1); // mas reciente → bajar
-              }
-            }}
-            placeholder="Buscar palabra en el chat…"
-            aria-label="Buscar en la conversación"
-            className={`${CAMPO} w-full py-2 pl-9 pr-3 sm:pr-9`}
-          />
-        </div>
-
-        {buscando && (
-          <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
-            <span
-              className="min-w-[4.5rem] text-center text-xs tabular-nums text-ink-soft"
-              aria-live="polite"
-            >
-              {totalCoincidencias === 0
-                ? "0 / 0"
-                : `${activo + 1} / ${totalCoincidencias}`}
-            </span>
-            <button
-              type="button"
-              onClick={() => ir(1)}
-              disabled={totalCoincidencias === 0}
-              aria-label="Coincidencia más antigua"
-              title="Más antigua (↑)"
-              className="grid h-8 w-8 place-items-center rounded-control border border-line bg-surface text-ink-soft transition-colors hover:bg-sunk hover:text-ink disabled:opacity-40"
-            >
-              <span className="text-sm leading-none" aria-hidden>
-                ↑
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => ir(-1)}
-              disabled={totalCoincidencias === 0}
-              aria-label="Coincidencia más reciente"
-              title="Más reciente (↓)"
-              className="grid h-8 w-8 place-items-center rounded-control border border-line bg-surface text-ink-soft transition-colors hover:bg-sunk hover:text-ink disabled:opacity-40"
-            >
-              <span className="text-sm leading-none" aria-hidden>
-                ↓
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setConsulta("")}
-              aria-label="Limpiar búsqueda"
-              className="grid h-8 w-8 place-items-center rounded-control text-ink-soft transition-colors hover:bg-sunk hover:text-ink"
-            >
-              <IconoCerrar className="h-3.5 w-3.5" />
-            </button>
-          </div>
+      {barraChat &&
+        createPortal(
+          <div className="mt-2 flex min-h-8 items-center">{herramientas(1)}</div>,
+          barraChat,
         )}
-      </div>
 
       <div
         ref={listaRef}
