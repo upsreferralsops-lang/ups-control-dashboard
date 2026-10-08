@@ -7,7 +7,7 @@ import { FiltrosReportes } from "./FiltrosReportes";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Reportes y Métricas | UPS Talent Ops",
+  title: "Reportes y Métricas | Talent Ops",
 };
 
 const RANGOS = new Set(["30d", "mes", "mes_ant", "anio", "todo"]);
@@ -230,7 +230,7 @@ export default async function ReportesPage({
               tasa: fmtPct(reportes.datos_completos, reportes.iniciados),
             },
             {
-              label: "Referidos a UPS",
+              label: "Referidos enviados",
               valor: reportes.referidos,
               tasa: fmtPct(reportes.referidos, reportes.datos_completos || reportes.iniciados),
             },

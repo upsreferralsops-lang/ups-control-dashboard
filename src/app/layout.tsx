@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Consola de referidos",
-  description: "Operacion de referidos UPS: candidatos, bots y estados",
+  description: "Operación de referidos: candidatos, bots y estados",
   // iPhone: instalada desde "Agregar a inicio" abre como app (y recibe push).
   appleWebApp: { capable: true, title: "Talent Ops", statusBarStyle: "default" },
   icons: { apple: "/apple-touch-icon.png" },

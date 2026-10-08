@@ -14,7 +14,7 @@ import { BancoReglas } from "./BancoReglas";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Configuración | UPS Talent Ops",
+  title: "Configuración | Talent Ops",
 };
 
 function opcionesDeConfig(args: {

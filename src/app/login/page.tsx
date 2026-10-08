@@ -52,7 +52,7 @@ export default async function LoginPage({
             </span>
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.12em]">
-                UPS Global Recruitment
+                Talent Ops
               </p>
               <p className="font-mono text-[11px] text-signal/80">
                 Consola de Operaciones Directas
@@ -71,7 +71,7 @@ export default async function LoginPage({
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-white/60">
               Plataforma para la validación, trazabilidad y supervisión en tiempo real del
-              flujo de candidatos hacia el ATS corporativo de UPS Careers.
+              flujo de candidatos referidos.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default async function LoginPage({
           <LoginForm />
 
           <p className="mt-10 border-t border-line pt-5 text-center font-mono text-[11px] text-signal-ink/70">
-            UPS Careers Operations Gate · Acceso Autorizado Únicamente
+            Acceso autorizado únicamente
           </p>
         </div>
       </main>

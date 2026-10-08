@@ -94,6 +94,6 @@ export async function renovarSesionBot(tenantId: string): Promise<{ error: strin
   }
   return {
     error: null,
-    ok: "Re-login encolado. El token nuevo llega en unos minutos (UPS pide OTP).",
+    ok: "Re-login encolado. El token nuevo llega en unos minutos (el portal pide un código).",
   };
 }

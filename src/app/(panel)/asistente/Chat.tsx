@@ -27,7 +27,7 @@ const SUGERENCIAS = [
     texto: "¿Cómo están los créditos de mis bots?",
   },
   {
-    etiqueta: "Buscar en UPS",
+    etiqueta: "Buscar vacantes",
     texto: "Buscar package handler a 40 millas de 55369",
   },
 ] as const;
@@ -374,7 +374,7 @@ function Conversacion({
             {detalle?.title ?? "Asistente operativo"}
           </h2>
           <p className="truncate text-xs text-ink-faint">
-            Lee, propone y pide confirmación antes de tocar UPS o fichas
+            Lee, propone y pide confirmación antes de tocar el portal o las fichas
           </p>
         </div>
       </header>
@@ -468,7 +468,7 @@ function Bienvenida() {
       <div className="flex flex-col gap-2">
         <h3 className="text-[1.65rem] font-semibold tracking-tight text-ink">¿Qué necesitás hoy?</h3>
         <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-ink-soft">
-          Reportes, créditos, búsquedas en UPS o cambios de ficha. Nada se escribe ni se avisa por
+          Reportes, créditos, búsquedas de vacantes o cambios de ficha. Nada se escribe ni se avisa por
           Telegram hasta que confirmás.
         </p>
       </div>

@@ -15,7 +15,7 @@ const RANGOS = [
 
 const ESTADOS: { value: ReferralStatus | "todos"; label: string }[] = [
   { value: "todos", label: "Todos los estados" },
-  { value: "sent_confirmed", label: "Referidos a UPS" },
+  { value: "sent_confirmed", label: "Referidos enviados" },
   { value: "waiting_position", label: "En espera" },
   { value: "not_started", label: "En proceso de aplicación" },
   { value: "duplicate_or_error", label: "Fallidos" },

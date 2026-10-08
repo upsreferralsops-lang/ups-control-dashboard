@@ -15,7 +15,7 @@ import {
 export const REFERRAL_STATUS = {
   sent_confirmed: {
     label: "Referido",
-    help: "El referido se envió y quedó confirmado en UPS.",
+    help: "El referido se envió y quedó confirmado en el portal de empleo.",
     badge: "border-ok-border bg-ok-wash text-ok-ink",
     Icono: IconoOk,
   },
@@ -39,7 +39,7 @@ export const REFERRAL_STATUS = {
   },
   search_failed: {
     label: "Búsqueda falló",
-    help: "No se pudo consultar las vacantes de UPS, así que no sabemos si hay cupos. Revisá la sesión de UPS y reintentá.",
+    help: "No se pudo consultar las vacantes, así que no sabemos si hay cupos. Revisá la sesión del portal y reintentá.",
     badge: "border-bad-border bg-bad-wash text-bad-ink",
     Icono: IconoAlerta,
   },

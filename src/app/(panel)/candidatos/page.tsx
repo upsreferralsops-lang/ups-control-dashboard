@@ -414,7 +414,7 @@ export default async function Panel({
           <p className="eyebrow">Operación</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Candidatos</h1>
           <p className="mt-1 max-w-prose text-sm text-ink-soft max-sm:hidden">
-            Supervisión en tiempo real de referidos captados por bots enlazados a UPS.
+            Supervisión en tiempo real de referidos captados por los bots.
           </p>
         </div>
       </div>

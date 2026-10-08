@@ -83,7 +83,7 @@ export function Bot({ bot, parte }: { bot: AdminTenant; parte: number }) {
         <Boton
           disabled={pendiente}
           className="min-h-8 px-2.5 py-1 text-xs"
-          title="Re-login UPS para obtener un token de sesión nuevo"
+          title="Volver a iniciar sesión en el portal de empleo para obtener un token nuevo"
           onClick={() =>
             iniciar(async () => {
               setError(null);

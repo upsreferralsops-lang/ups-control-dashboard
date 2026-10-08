@@ -68,7 +68,7 @@ export function MenuMovil({ noLeidas, children }: { noLeidas: number; children: 
             <IconoCamion className="h-5 w-5 text-[#fe932c]" />
           </span>
           <span className="truncate text-sm font-semibold tracking-tight text-brand">
-            UPS Talent Ops
+            Talent Ops
           </span>
         </Link>
 

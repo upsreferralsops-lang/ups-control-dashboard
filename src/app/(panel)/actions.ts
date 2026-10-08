@@ -15,6 +15,6 @@ export async function renovarSesionUps(tenantId: string): Promise<RenovarSesionS
   }
   return {
     error: null,
-    ok: "Re-login encolado. El token nuevo llega en unos minutos (UPS pide OTP).",
+    ok: "Re-login encolado. El token nuevo llega en unos minutos (el portal pide un código).",
   };
 }

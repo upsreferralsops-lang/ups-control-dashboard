@@ -7,7 +7,7 @@ import { ActivarNotificaciones } from "./ActivarNotificaciones";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Notificaciones | UPS Talent Ops",
+  title: "Notificaciones | Talent Ops",
 };
 
 export default async function NotificacionesPage() {

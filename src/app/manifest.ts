@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 /** PWA: el panel se instala en el celular y recibe notificaciones push. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "UPS Talent Ops",
+    name: "Talent Ops",
     short_name: "Talent Ops",
-    description: "Consola de referidos UPS: candidatos, bots y notificaciones",
+    description: "Consola de referidos: candidatos, bots y notificaciones",
     start_url: "/",
     scope: "/",
     display: "standalone",

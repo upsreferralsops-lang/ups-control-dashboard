@@ -68,7 +68,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-sm font-semibold leading-tight tracking-tight text-brand">
-                UPS Talent Ops
+                Talent Ops
               </span>
               <span className="truncate text-[11px] font-medium text-ink-soft">
                 {esAdmin ? "Consola Administrador" : "Consola de referidos"}

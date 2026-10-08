@@ -417,7 +417,7 @@ export default async function Home({
           iconoColor="text-signal"
         />
         <Kpi
-          titulo="Referidos a UPS"
+          titulo="Referidos enviados"
           valor={metrics.referidos_ok}
           pie={`${tasaExito}% tasa de éxito en traspaso`}
           pieTono="ok"

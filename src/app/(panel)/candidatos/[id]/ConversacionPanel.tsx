@@ -521,7 +521,9 @@ export function ConversacionPanel({
                   <AdjuntoMensaje m={m} />
                 </div>
               )}
-              {m.text && <p className="whitespace-pre-wrap break-words">{nodos}</p>}
+              {m.text && m.text.trim() !== CAPTION_CAPTURA && (
+                <p className="whitespace-pre-wrap break-words">{nodos}</p>
+              )}
             </div>
           );
 

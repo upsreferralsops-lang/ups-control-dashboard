@@ -81,7 +81,7 @@ export function EstadoServicioScreen({
               <IconoCamion className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-semibold">Referidos UPS</p>
+              <p className="text-sm font-semibold">Talent Ops</p>
               <p className="text-[13px] text-rail-faint">Consola de operación</p>
             </div>
           </div>

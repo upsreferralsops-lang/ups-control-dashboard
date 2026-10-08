@@ -5,7 +5,7 @@ import { AsistenteSala } from "./Chat";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Asistente | UPS Talent Ops",
+  title: "Asistente | Talent Ops",
 };
 
 export default async function AsistentePage({
