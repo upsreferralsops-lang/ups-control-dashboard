@@ -135,10 +135,12 @@ export function AsistenteSala({
   // Solo en movil: chat e historial no entran juntos, se alterna con el switch.
   const [vista, setVista] = useState<"chat" | "historial">("chat");
 
+  // Celular: ocupa toda la pantalla bajo la barra (h-14) y solo scrollea el chat.
+  // Los margenes negativos anulan el padding de <main> (py-6 / sm:py-8).
   return (
     <div
       data-fill-panel
-      className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] max-md:h-[calc(100dvh-6.5rem)] max-md:flex-none md:min-h-0"
+      className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] max-md:-mx-5 max-md:-my-6 max-md:h-[calc(100dvh-3.5rem)] max-md:min-h-0 max-md:flex-none max-md:rounded-none max-md:border-0 max-md:shadow-none sm:max-md:-mx-8 sm:max-md:-my-8 md:min-h-0"
     >
       <div className="border-b border-line p-2 md:hidden">
         <div role="tablist" aria-label="Vista del asistente" className="flex gap-1 rounded-control bg-sunk p-0.5">
@@ -537,7 +539,7 @@ function Composer({ threadId }: { threadId: string | null }) {
   }
 
   return (
-    <form ref={formRef} action={action} className="border-t border-line bg-surface px-4 py-3 md:px-6">
+    <form ref={formRef} action={action} className="border-t border-line bg-surface px-4 py-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-6">
       <div className="flex items-end gap-2 rounded-panel border border-line-strong bg-paper p-2 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.6)] transition-[border-color,box-shadow] duration-150 focus-within:border-signal focus-within:ring-2 focus-within:ring-signal/25">
         <label className="sr-only" htmlFor="mensaje-asistente">
           Mensaje
