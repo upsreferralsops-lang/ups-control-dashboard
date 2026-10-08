@@ -84,18 +84,12 @@ export async function turnoPlayground(
   body: {
     message: string;
     session_id?: string;
-    first_name?: string;
-    zip?: string;
   },
 ): Promise<{ ok: true; data: PlaygroundTurn } | { ok: false; error: string }> {
   try {
     const data = await playgroundTurn(tenantId, {
       message: body.message,
       session_id: body.session_id,
-      candidate_snapshot: {
-        first_name: body.first_name,
-        zip: body.zip,
-      },
     });
     revalidar(tenantId);
     return { ok: true, data };

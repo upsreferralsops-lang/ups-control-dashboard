@@ -49,8 +49,7 @@ export function BancoReglas({
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
 
-  const [nombre, setNombre] = useState("Alex");
-  const [zip, setZip] = useState("32824");
+  const [avisoBot, setAvisoBot] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [chat, setChat] = useState<PlaygroundMessage[]>([]);
@@ -421,33 +420,27 @@ export function BancoReglas({
           vista === "reglas" ? "max-lg:hidden" : ""
         }`}
       >
-        <header className="border-b border-line px-4 py-3">
-          <h2 className="text-sm font-semibold text-ink">Playground</h2>
-          <p className="mt-1 text-xs text-ink-soft">
-            Esto no le llega a ningún candidato. Guardá el borrador para que entre en la prueba; el
-            bot responde con las reglas habilitadas y tus borradores.
-          </p>
+        <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Playground</h2>
+            <p className="mt-1 text-xs text-ink-soft">
+              Es el mismo bot que hablan los candidatos: busca vacantes reales en UPS, pero nunca
+              refiere a nadie. Guardá el borrador para que entre en la prueba.
+            </p>
+          </div>
+          <Boton
+            type="button"
+            disabled={probando || chat.length === 0}
+            onClick={() => {
+              setSessionId(undefined);
+              setChat([]);
+              setAvisoBot(null);
+              setError(null);
+            }}
+          >
+            Nueva conversación
+          </Boton>
         </header>
-
-        <div className="grid grid-cols-2 gap-2 border-b border-line px-4 py-3">
-          <label>
-            <span className="mb-1 block text-xs font-medium text-ink-soft">Nombre de prueba</span>
-            <input
-              className={CAMPO}
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          </label>
-          <label>
-            <span className="mb-1 block text-xs font-medium text-ink-soft">ZIP</span>
-            <input
-              className={`${CAMPO} tabular-nums`}
-              value={zip}
-              onChange={(e) => setZip(e.target.value)}
-              inputMode="numeric"
-            />
-          </label>
-        </div>
 
         <div
           ref={chatRef}
@@ -455,7 +448,7 @@ export function BancoReglas({
         >
           {chat.length === 0 && !probando ? (
             <p className="m-auto max-w-prose text-center text-sm text-ink-soft">
-              Escribí como un candidato para ver cómo responde el bot con las reglas nuevas.
+              Escribí como un candidato nuevo: el bot arranca sin datos, igual que en Telegram.
             </p>
           ) : (
             chat.map((m) => (
@@ -476,6 +469,12 @@ export function BancoReglas({
           ) : null}
         </div>
 
+        {avisoBot ? (
+          <div className="px-4 pb-3">
+            <Aviso>{avisoBot}</Aviso>
+          </div>
+        ) : null}
+
         {/* El error del playground se ve abajo del editor en escritorio; en movil, aca. */}
         {error ? (
           <div className="px-4 pb-3 lg:hidden">
@@ -491,14 +490,13 @@ export function BancoReglas({
             const texto = mensaje.trim();
             if (!texto || probando) return;
             setError(null);
+            setAvisoBot(null);
             setProbando(true);
             setMensaje("");
             void (async () => {
               const result = await turnoPlayground(tenantId, {
                 message: texto,
                 session_id: sessionId,
-                first_name: nombre,
-                zip,
               });
               setProbando(false);
               if (!result.ok) {
@@ -508,6 +506,7 @@ export function BancoReglas({
               }
               setSessionId(result.data.session_id);
               setChat(result.data.messages);
+              setAvisoBot(result.data.aviso);
               router.refresh();
             })();
           }}

@@ -221,6 +221,8 @@ export type PlaygroundTurn = {
   reply_text: string;
   message_id: number;
   tested_case_ids: string[];
+  /** Lo que el bot real haría y acá no (referir, escalar, mandar la imagen). */
+  aviso: string | null;
   messages: PlaygroundMessage[];
 };
 
@@ -580,7 +582,6 @@ export const playgroundTurn = (
   body: {
     message: string;
     session_id?: string;
-    candidate_snapshot?: { first_name?: string; zip?: string };
   },
 ) =>
   request<PlaygroundTurn>(`/api/tenants/${tenantId}/playground/turn`, {
