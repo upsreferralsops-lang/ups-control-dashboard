@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ImprovementCase, PlaygroundMessage } from "@/lib/api";
 import { Aviso, Boton, CAMPO } from "@/components/ui";
-import { IconoActualizar, IconoEnviar, IconoVolver } from "@/lib/icons";
+import { IconoActualizar, IconoBasura, IconoEnviar, IconoVolver } from "@/lib/icons";
 import {
   cambiarActivaRegla,
   guardarBorrador,
   habilitarRegla,
   turnoPlayground,
+  borrarRegla,
 } from "./actions";
 
 function esCorreccion(caso: ImprovementCase) {
@@ -48,6 +49,16 @@ export function BancoReglas({
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
+  const [aBorrar, setABorrar] = useState<ImprovementCase | null>(null);
+  const [borrando, setBorrando] = useState(false);
+  const dialogoRef = useRef<HTMLDialogElement>(null);
+
+  // <dialog> nativo: foco atrapado, Esc y fondo bloqueado sin codigo propio.
+  useEffect(() => {
+    const d = dialogoRef.current;
+    if (aBorrar && d && !d.open) d.showModal();
+    if (!aBorrar && d?.open) d.close();
+  }, [aBorrar]);
 
   const [avisoBot, setAvisoBot] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState("");
@@ -191,17 +202,23 @@ export function BancoReglas({
             ) : (
               listado.map((caso) => {
                 const activo = seleccion === caso.id;
+                const borrable =
+                  !esCorreccion(caso) &&
+                  (!caso.is_global || (esAdmin && caso.tenant_id === tenantId));
                 return (
-                  <li key={caso.id}>
+                  <li
+                    key={caso.id}
+                    className={`flex items-center transition-colors duration-150 ${
+                      activo ? "bg-brand-wash text-ink" : "text-ink-soft hover:bg-sunk hover:text-ink"
+                    }`}
+                  >
                     <button
                       type="button"
                       onClick={() => {
                         abrir(caso);
                         setEnDetalle(true);
                       }}
-                      className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left text-sm transition-colors duration-150 ${
-                        activo ? "bg-brand-wash text-ink" : "text-ink-soft hover:bg-sunk hover:text-ink"
-                      }`}
+                      className="flex min-w-0 flex-1 flex-col items-start gap-1 px-4 py-3 text-left text-sm"
                     >
                       <span className="line-clamp-1 font-medium">
                         {caso.title || caso.guidance}
@@ -212,6 +229,17 @@ export function BancoReglas({
                           : `${caso.is_global ? "Global · En todos los bots · " : ""}${etiqueta(caso)}`}
                       </span>
                     </button>
+                    {borrable ? (
+                      <button
+                        type="button"
+                        aria-label={`Borrar regla ${caso.title || ""}`.trim()}
+                        title="Borrar regla"
+                        onClick={() => setABorrar(caso)}
+                        className="mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-control text-ink-faint transition-colors duration-150 hover:bg-bad-wash hover:text-bad-ink"
+                      >
+                        <IconoBasura className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </li>
                 );
               })
@@ -528,6 +556,50 @@ export function BancoReglas({
           </Boton>
         </form>
       </section>
+
+      <dialog
+        ref={dialogoRef}
+        onClose={() => setABorrar(null)}
+        aria-labelledby="borrar-regla-titulo"
+        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-panel border border-line bg-surface p-5 text-ink shadow-xl backdrop:bg-black/40"
+      >
+        <h2 id="borrar-regla-titulo" className="text-base font-semibold">
+          ¿Borrar la regla?
+        </h2>
+        <p className="mt-2 text-sm text-ink-soft">
+          «{aBorrar?.title || aBorrar?.guidance}». El bot deja de usarla. No se puede deshacer.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Boton type="button" disabled={borrando} onClick={() => setABorrar(null)}>
+            Cancelar
+          </Boton>
+          <button
+            type="button"
+            disabled={borrando}
+            onClick={async () => {
+              if (!aBorrar) return;
+              setBorrando(true);
+              const result = await borrarRegla(tenantId, aBorrar.id);
+              setBorrando(false);
+              if (!result.ok) {
+                setError(result.error);
+                setABorrar(null);
+                return;
+              }
+              if (seleccion === aBorrar.id) {
+                abrir(reglas.find((r) => r.id !== aBorrar.id) ?? "nueva");
+                setEnDetalle(false);
+              }
+              setAviso("Regla borrada.");
+              setABorrar(null);
+              router.refresh();
+            }}
+            className="inline-flex min-h-10 items-center justify-center rounded-control border border-transparent bg-bad px-4 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+          >
+            {borrando ? "Borrando…" : "Borrar"}
+          </button>
+        </div>
+      </dialog>
     </div>
   );
 }

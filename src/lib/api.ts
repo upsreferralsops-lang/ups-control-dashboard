@@ -577,6 +577,11 @@ export const patchTenantImprovementCase = (
     body: JSON.stringify(body),
   });
 
+export const deleteTenantImprovementCase = (tenantId: string, caseId: string) =>
+  request<{ id: string; deleted: boolean }>(`/api/tenants/${tenantId}/improvements/${caseId}`, {
+    method: "DELETE",
+  });
+
 export const playgroundTurn = (
   tenantId: string,
   body: {

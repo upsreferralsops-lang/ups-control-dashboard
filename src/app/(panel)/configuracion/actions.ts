@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   createTenantImprovementCase,
+  deleteTenantImprovementCase,
   patchTenantImprovementCase,
   playgroundTurn,
   type PlaygroundTurn,
@@ -58,6 +59,22 @@ export async function habilitarRegla(
     return {
       ok: false,
       error: error instanceof Error ? error.message : "No se pudo habilitar la regla.",
+    };
+  }
+}
+
+export async function borrarRegla(
+  tenantId: string,
+  caseId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await deleteTenantImprovementCase(tenantId, caseId);
+    revalidar(tenantId);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "No se pudo borrar la regla.",
     };
   }
 }
