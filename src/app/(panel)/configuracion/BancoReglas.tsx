@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ImprovementCase, PlaygroundMessage } from "@/lib/api";
 import { Aviso, Boton, CAMPO } from "@/components/ui";
-import { IconoEnviar, IconoVolver } from "@/lib/icons";
+import { IconoActualizar, IconoEnviar, IconoVolver } from "@/lib/icons";
 import {
   cambiarActivaRegla,
   guardarBorrador,
@@ -416,20 +416,19 @@ export function BancoReglas({
       </section>
 
       <section
-        className={`flex min-h-[40vh] flex-col rounded-panel border border-line bg-surface max-lg:min-h-[60dvh] lg:min-h-0 ${
+        className={`flex min-h-[40vh] flex-col rounded-panel border border-line bg-surface max-lg:min-h-[60dvh] max-md:min-h-[85dvh] lg:min-h-0 ${
           vista === "reglas" ? "max-lg:hidden" : ""
         }`}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
-          <div>
+        <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-ink">Playground</h2>
-            <p className="mt-1 text-xs text-ink-soft">
-              Es el mismo bot que hablan los candidatos: busca vacantes reales en UPS, pero nunca
-              refiere a nadie. Guardá el borrador para que entre en la prueba.
-            </p>
+            <p className="text-xs text-ink-soft">El bot real: busca vacantes, nunca refiere.</p>
           </div>
-          <Boton
+          <button
             type="button"
+            aria-label="Reiniciar conversación"
+            title="Reiniciar conversación"
             disabled={probando || chat.length === 0}
             onClick={() => {
               setSessionId(undefined);
@@ -437,18 +436,19 @@ export function BancoReglas({
               setAvisoBot(null);
               setError(null);
             }}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-line-strong bg-surface text-ink-soft transition-colors duration-150 hover:bg-sunk hover:text-ink disabled:opacity-40"
           >
-            Nueva conversación
-          </Boton>
+            <IconoActualizar className="h-4 w-4" />
+          </button>
         </header>
 
         <div
           ref={chatRef}
-          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3 max-lg:[&>*]:scroll-mb-24"
+          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-3 max-md:overflow-visible max-lg:[&>*]:scroll-mb-24"
         >
           {chat.length === 0 && !probando ? (
             <p className="m-auto max-w-prose text-center text-sm text-ink-soft">
-              Escribí como un candidato nuevo: el bot arranca sin datos, igual que en Telegram.
+              Escribí como un candidato nuevo.
             </p>
           ) : (
             chat.map((m) => (
@@ -484,7 +484,7 @@ export function BancoReglas({
 
         {/* En movil la caja de mensaje queda pegada abajo mientras se lee la prueba. */}
         <form
-          className="flex gap-2 rounded-b-panel border-t border-line bg-surface p-3 max-lg:sticky max-lg:bottom-0"
+          className="flex gap-2 rounded-b-panel border-t border-line bg-surface p-3 max-lg:sticky max-lg:bottom-0 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           onSubmit={(e) => {
             e.preventDefault();
             const texto = mensaje.trim();
@@ -519,7 +519,7 @@ export function BancoReglas({
             className={CAMPO}
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}
-            placeholder="Escribí como un candidato…"
+            placeholder="Mensaje…"
             disabled={probando}
           />
           <Boton type="submit" variante="primario" disabled={probando || !mensaje.trim()}>
