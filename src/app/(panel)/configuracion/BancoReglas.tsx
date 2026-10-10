@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ImprovementCase, PlaygroundMessage, PreguntaPendiente } from "@/lib/api";
+import type { ImprovementCase, PlaygroundMessage } from "@/lib/api";
 import { Aviso, Boton, CAMPO } from "@/components/ui";
 import { IconoActualizar, IconoBasura, IconoEnviar, IconoVolver } from "@/lib/icons";
 import {
@@ -14,7 +14,6 @@ import {
   borrarRegla,
 } from "./actions";
 import { ImportarConocimiento } from "./ImportarConocimiento";
-import { BandejaSinRespuesta } from "./BandejaSinRespuesta";
 
 function esCorreccion(caso: ImprovementCase) {
   return caso.kind === "correction" || (caso.kind == null && caso.candidate_id != null && caso.message_id != null);
@@ -32,7 +31,6 @@ export function BancoReglas({
   casos,
   esAdmin,
   bots = [],
-  pendientes = [],
 }: {
   tenantId: string;
   tenantName: string;
@@ -40,15 +38,13 @@ export function BancoReglas({
   esAdmin: boolean;
   /** Bots que ve el usuario (el admin elige en cuáles publica). */
   bots?: { id: string; nombre: string }[];
-  /** Bandeja "Sin respuesta": lo que el bot no supo contestar. */
-  pendientes?: PreguntaPendiente[];
 }) {
   const router = useRouter();
   // Admin, regla nueva: en qué bots se crea (una copia por bot).
   const [botsElegidos, setBotsElegidos] = useState<string[]>([tenantId]);
   const reglas = useMemo(() => casos.filter((c) => !esCorreccion(c)), [casos]);
   const correcciones = useMemo(() => casos.filter(esCorreccion), [casos]);
-  const [pestana, setPestana] = useState<"reglas" | "correcciones" | "importar" | "pendientes">("reglas");
+  const [pestana, setPestana] = useState<"reglas" | "correcciones" | "importar">("reglas");
   const listado = pestana === "correcciones" ? correcciones : reglas;
   const [seleccion, setSeleccion] = useState<string | "nueva" | null>(
     reglas[0]?.id ?? "nueva",
@@ -194,15 +190,6 @@ export function BancoReglas({
             >
               Importar
             </button>
-            <button
-              type="button"
-              onClick={() => setPestana("pendientes")}
-              className={`whitespace-nowrap rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:flex-1 max-md:px-2 max-md:text-sm ${
-                pestana === "pendientes" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
-              }`}
-            >
-              Sin respuesta{pendientes.length ? ` · ${pendientes.length}` : ""}
-            </button>
           </div>
           {pestana === "reglas" ? (
             <div className="flex gap-2">
@@ -220,9 +207,7 @@ export function BancoReglas({
           ) : null}
         </header>
 
-        {pestana === "pendientes" ? (
-          <BandejaSinRespuesta tenantId={tenantId} tenantName={tenantName} pendientes={pendientes} />
-        ) : pestana === "importar" ? (
+        {pestana === "importar" ? (
           <ImportarConocimiento
             tenantId={tenantId}
             tenantName={tenantName}
