@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  analizarArchivoConocimiento,
   createTenantImprovementCase,
+  importarConocimiento,
+  type FilaConocimiento,
   deleteTenantImprovementCase,
   patchTenantImprovementCase,
   playgroundTurn,
@@ -16,13 +19,14 @@ function revalidar(tenantId: string) {
 
 export async function guardarBorrador(
   tenantId: string,
-  body: { title: string; guidance: string; is_global?: boolean },
+  body: { title: string; guidance: string; is_global?: boolean; tenant_ids?: string[] },
   caseId?: string,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   try {
     const guidance = body.guidance.trim();
     const title = body.title.trim();
     const extra = body.is_global === undefined ? {} : { is_global: body.is_global };
+    const destinos = body.tenant_ids?.length ? { tenant_ids: body.tenant_ids } : {};
     if (caseId) {
       const row = await patchTenantImprovementCase(tenantId, caseId, {
         guidance,
@@ -36,6 +40,7 @@ export async function guardarBorrador(
       guidance,
       title: title || undefined,
       ...extra,
+      ...destinos,
     });
     revalidar(tenantId);
     return { ok: true, id: row.id };
@@ -44,6 +49,32 @@ export async function guardarBorrador(
       ok: false,
       error: error instanceof Error ? error.message : "No se pudo guardar el borrador.",
     };
+  }
+}
+
+export async function analizarArchivo(
+  tenantId: string,
+  nombre: string,
+  contenidoB64: string,
+): Promise<{ ok: true; filas: FilaConocimiento[]; origen: string } | { ok: false; error: string }> {
+  try {
+    const r = await analizarArchivoConocimiento(tenantId, nombre, contenidoB64);
+    return { ok: true, filas: r.filas, origen: r.origen };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "No se pudo leer el archivo." };
+  }
+}
+
+export async function importarFilas(
+  tenantId: string,
+  body: { filas: { title: string | null; guidance: string }[]; is_global?: boolean; tenant_ids?: string[] },
+): Promise<{ ok: true; creadas: number } | { ok: false; error: string }> {
+  try {
+    const r = await importarConocimiento(tenantId, body);
+    revalidar(tenantId);
+    return { ok: true, creadas: r.creadas };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "No se pudo publicar." };
   }
 }
 

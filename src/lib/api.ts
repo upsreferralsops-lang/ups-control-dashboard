@@ -559,9 +559,27 @@ export const listTenantImprovementCases = (tenantId: string) =>
 
 export const createTenantImprovementCase = (
   tenantId: string,
-  body: { guidance: string; title?: string; is_global?: boolean },
+  body: { guidance: string; title?: string; is_global?: boolean; tenant_ids?: string[] },
 ) =>
   request<ImprovementCase>(`/api/tenants/${tenantId}/improvements`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+/** Fila de la base de conocimiento propuesta desde un archivo (sin guardar). */
+export type FilaConocimiento = { title: string | null; guidance: string; avisos?: string[] };
+
+export const analizarArchivoConocimiento = (tenantId: string, nombre: string, contenido_b64: string) =>
+  request<{ origen: "tabla" | "ia"; filas: FilaConocimiento[] }>(
+    `/api/tenants/${tenantId}/conocimiento/analizar`,
+    { method: "POST", body: JSON.stringify({ nombre, contenido_b64 }) },
+  );
+
+export const importarConocimiento = (
+  tenantId: string,
+  body: { filas: { title: string | null; guidance: string }[]; is_global?: boolean; tenant_ids?: string[] },
+) =>
+  request<{ creadas: number; bots: number }>(`/api/tenants/${tenantId}/conocimiento/importar`, {
     method: "POST",
     body: JSON.stringify(body),
   });

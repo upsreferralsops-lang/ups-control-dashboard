@@ -13,6 +13,7 @@ import {
   turnoPlayground,
   borrarRegla,
 } from "./actions";
+import { ImportarConocimiento } from "./ImportarConocimiento";
 
 function esCorreccion(caso: ImprovementCase) {
   return caso.kind === "correction" || (caso.kind == null && caso.candidate_id != null && caso.message_id != null);
@@ -29,13 +30,19 @@ export function BancoReglas({
   tenantName,
   casos,
   esAdmin,
+  bots = [],
 }: {
   tenantId: string;
   tenantName: string;
   casos: ImprovementCase[];
   esAdmin: boolean;
+  /** Bots que ve el usuario (el admin elige en cuáles publica). */
+  bots?: { id: string; nombre: string }[];
 }) {
   const router = useRouter();
+  const [importarAbierto, setImportarAbierto] = useState(false);
+  // Admin, regla nueva: en qué bots se crea (una copia por bot).
+  const [botsElegidos, setBotsElegidos] = useState<string[]>([tenantId]);
   const reglas = useMemo(() => casos.filter((c) => !esCorreccion(c)), [casos]);
   const correcciones = useMemo(() => casos.filter(esCorreccion), [casos]);
   const [pestana, setPestana] = useState<"reglas" | "correcciones">("reglas");
@@ -177,16 +184,25 @@ export function BancoReglas({
             </button>
           </div>
           {pestana === "reglas" ? (
-            <Boton
-              type="button"
-              className="!min-h-8 !px-2.5 !py-1 text-xs"
-              onClick={() => {
-                abrir("nueva");
-                setEnDetalle(true);
-              }}
-            >
-              Nueva regla
-            </Boton>
+            <div className="flex gap-2">
+              <Boton
+                type="button"
+                className="!min-h-8 !px-2.5 !py-1 text-xs"
+                onClick={() => setImportarAbierto(true)}
+              >
+                Importar archivo
+              </Boton>
+              <Boton
+                type="button"
+                className="!min-h-8 !px-2.5 !py-1 text-xs"
+                onClick={() => {
+                  abrir("nueva");
+                  setEnDetalle(true);
+                }}
+              >
+                Nueva regla
+              </Boton>
+            </div>
           ) : null}
         </header>
 
@@ -303,6 +319,7 @@ export function BancoReglas({
                     title: titulo,
                     guidance: guia,
                     ...(esAdmin ? { is_global: esGlobal } : {}),
+                    ...(esAdmin && !esGlobal && !actual ? { tenant_ids: botsElegidos } : {}),
                   },
                   actual?.id,
                 );
@@ -363,6 +380,27 @@ export function BancoReglas({
                   </span>
                 </span>
               </label>
+            ) : null}
+            {esAdmin && !soloLectura && !esGlobal && !actual && bots.length > 1 ? (
+              <fieldset className="flex flex-col gap-1 text-sm">
+                <legend className="mb-1 text-xs font-medium text-ink-soft">O elegí en qué bots se crea</legend>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {bots.map((b) => (
+                    <label key={b.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={botsElegidos.includes(b.id)}
+                        onChange={(e) =>
+                          setBotsElegidos((xs) =>
+                            e.target.checked ? [...xs, b.id] : xs.filter((x) => x !== b.id),
+                          )
+                        }
+                      />
+                      {b.nombre}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
             ) : null}
 
             {error ? (
@@ -601,6 +639,17 @@ export function BancoReglas({
           </button>
         </div>
       </dialog>
+      <ImportarConocimiento
+        tenantId={tenantId}
+        tenantName={tenantName}
+        esAdmin={esAdmin}
+        bots={bots.length ? bots : [{ id: tenantId, nombre: tenantName }]}
+        abierto={importarAbierto}
+        alCerrar={(mensaje) => {
+          setImportarAbierto(false);
+          if (mensaje) setAviso(mensaje);
+        }}
+      />
     </div>
   );
 }

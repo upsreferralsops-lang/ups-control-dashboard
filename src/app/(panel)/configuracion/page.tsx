@@ -134,6 +134,7 @@ export default async function ConfiguracionPage({
         tenantName={etiqueta}
         casos={casos}
         esAdmin={esAdmin}
+        bots={opciones}
       />
     </div>
   );
