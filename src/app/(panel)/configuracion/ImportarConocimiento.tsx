@@ -6,7 +6,9 @@ import type { FilaConocimiento } from "@/lib/api";
 import { Aviso, Boton } from "@/components/ui";
 import { analizarArchivo, importarFilas } from "./actions";
 
-const TIPOS = ".xlsx,.csv,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.ogg,.oga,.opus,.mp3,.m4a,.wav";
+// Incluye formatos del iPhone: fotos HEIC/HEIF y notas de voz .m4a/.aac/.caf.
+const TIPOS =
+  ".xlsx,.csv,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.heic,.heif,.ogg,.oga,.opus,.mp3,.m4a,.aac,.caf,.wav";
 // Vercel corta las peticiones en 4,5 MB y el base64 agrega un tercio.
 const MAX_BYTES = 3 * 1024 * 1024;
 
@@ -105,7 +107,7 @@ export function ImportarConocimiento({
           Importar a la base del bot
         </h2>
         <p className="mt-1 text-xs text-ink-soft">
-          Excel o CSV (columnas Pregunta y Respuesta), PDF, Word, texto, imágenes o audios. Revisás
+          Excel o CSV (columnas Pregunta y Respuesta), PDF, Word, texto, fotos (también HEIC del iPhone) o notas de voz. Revisás
           todo antes de publicar.
         </p>
       </header>
