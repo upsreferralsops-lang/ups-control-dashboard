@@ -213,6 +213,7 @@ export function ConversacionPanel({
   const [marcando, setMarcando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<Message | null>(null);
   const [guidance, setGuidance] = useState("");
+  const [guardarEnBase, setGuardarEnBase] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
@@ -326,6 +327,7 @@ export function ConversacionPanel({
     setMarcando(false);
     setSeleccionado(null);
     setGuidance("");
+    setGuardarEnBase(false);
     setError(null);
   }
 
@@ -337,7 +339,7 @@ export function ConversacionPanel({
       return;
     }
     iniciar(async () => {
-      const result = await crearMejora(candidateId, messageId, guidance);
+      const result = await crearMejora(candidateId, messageId, guidance, guardarEnBase);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -591,10 +593,24 @@ export function ConversacionPanel({
             className={CAMPO}
             disabled={pendiente}
           />
+          <label className="flex items-start gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={guardarEnBase}
+              onChange={(e) => setGuardarEnBase(e.target.checked)}
+              disabled={pendiente}
+            />
+            <span>
+              Guardar también en la base del bot
+              <span className="block text-[11px] text-ink-faint">
+                Así responde en todos los chats de {tenantName}, no solo en este.
+              </span>
+            </span>
+          </label>
           <p className="text-[11px] text-ink-faint">
-            El bot le escribe ahora a este candidato. No se guarda como regla del
-            bot de <strong className="text-ink-soft">{tenantName}</strong> ni se
-            reutiliza en otros chats.
+            El bot le escribe ahora a este candidato.{" "}
+            {guardarEnBase ? "Y queda como respuesta permanente de su bot." : "No se reutiliza en otros chats."}
           </p>
           {error && <p className="text-xs text-bad">{error}</p>}
           <div className="flex gap-2">
