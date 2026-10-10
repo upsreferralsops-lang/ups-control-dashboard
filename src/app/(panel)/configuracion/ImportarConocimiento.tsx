@@ -66,7 +66,7 @@ export function ImportarConocimiento({
         return;
       }
       if (r.filas.length === 0) {
-        setError("No encontré preguntas y respuestas en ese archivo.");
+        setError("No encontré respuestas para el bot en ese archivo. Tiene que traer qué debe responder o hacer el bot (por ejemplo, una nota de voz tuya explicándolo), no solo preguntas de candidatos.");
         return;
       }
       setOrigen(r.origen);
