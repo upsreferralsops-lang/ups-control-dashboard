@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import {
   analizarArchivoConocimiento,
+  descartarPregunta,
+  responderPregunta,
   createTenantImprovementCase,
   importarConocimiento,
   type FilaConocimiento,
@@ -75,6 +77,33 @@ export async function importarFilas(
     return { ok: true, creadas: r.creadas };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "No se pudo publicar." };
+  }
+}
+
+export async function responderPendiente(
+  tenantId: string,
+  messageId: number,
+  respuesta: string,
+): Promise<{ ok: true; avisos: string[] } | { ok: false; error: string }> {
+  try {
+    const r = await responderPregunta(tenantId, messageId, respuesta.trim());
+    revalidar(tenantId);
+    return { ok: true, avisos: r.avisos };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "No se pudo guardar." };
+  }
+}
+
+export async function descartarPendiente(
+  tenantId: string,
+  messageId: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await descartarPregunta(tenantId, messageId);
+    revalidar(tenantId);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "No se pudo descartar." };
   }
 }
 

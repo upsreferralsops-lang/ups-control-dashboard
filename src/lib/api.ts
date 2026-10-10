@@ -584,6 +584,30 @@ export const importarConocimiento = (
     body: JSON.stringify(body),
   });
 
+/** Pregunta de un candidato que el bot no supo contestar (bandeja "Sin respuesta"). */
+export type PreguntaPendiente = {
+  message_id: number;
+  pregunta: string;
+  respuesta_bot: string | null;
+  candidato: string;
+  candidate_id: string;
+  created_at: string | null;
+};
+
+export const listPreguntasPendientes = (tenantId: string) =>
+  request<PreguntaPendiente[]>(`/api/tenants/${tenantId}/conocimiento/pendientes`);
+
+export const responderPregunta = (tenantId: string, messageId: number, respuesta: string) =>
+  request<{ ok: boolean; avisos: string[] }>(
+    `/api/tenants/${tenantId}/conocimiento/pendientes/${messageId}/responder`,
+    { method: "POST", body: JSON.stringify({ respuesta }) },
+  );
+
+export const descartarPregunta = (tenantId: string, messageId: number) =>
+  request<{ ok: boolean }>(`/api/tenants/${tenantId}/conocimiento/pendientes/${messageId}/descartar`, {
+    method: "POST",
+  });
+
 export const patchTenantImprovementCase = (
   tenantId: string,
   caseId: string,

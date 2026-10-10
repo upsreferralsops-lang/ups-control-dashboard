@@ -1,6 +1,8 @@
 import {
   CoreApiError,
+  listPreguntasPendientes,
   listTenantImprovementCases,
+  type PreguntaPendiente,
   listUsers,
   type AdminUser,
   type Tenant,
@@ -89,6 +91,13 @@ export default async function ConfiguracionPage({
       </div>
     );
   }
+  // Bandeja "Sin respuesta": si falla, la pantalla igual carga sin ella.
+  let pendientes: PreguntaPendiente[] = [];
+  try {
+    pendientes = await listPreguntasPendientes(tenant.id);
+  } catch {
+    pendientes = [];
+  }
   const etiqueta = opciones.find((o) => o.id === tenant.id)?.nombre ?? tenant.name;
 
   let casos = [];
@@ -135,6 +144,7 @@ export default async function ConfiguracionPage({
         casos={casos}
         esAdmin={esAdmin}
         bots={opciones}
+        pendientes={pendientes}
       />
     </div>
   );
