@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FilaConocimiento } from "@/lib/api";
 import { Aviso, Boton } from "@/components/ui";
@@ -28,30 +28,21 @@ export function ImportarConocimiento({
   tenantName,
   esAdmin,
   bots,
-  abierto,
-  alCerrar,
+  alPublicar,
 }: {
   tenantId: string;
   tenantName: string;
   esAdmin: boolean;
   bots: { id: string; nombre: string }[];
-  abierto: boolean;
-  alCerrar: (mensaje?: string) => void;
+  alPublicar: (mensaje: string) => void;
 }) {
   const router = useRouter();
-  const dialogo = useRef<HTMLDialogElement>(null);
   const [filas, setFilas] = useState<(FilaConocimiento & { incluir: boolean })[]>([]);
   const [origen, setOrigen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [paraTodos, setParaTodos] = useState(false);
   const [elegidos, setElegidos] = useState<string[]>([tenantId]);
-
-  useEffect(() => {
-    const d = dialogo.current;
-    if (abierto && d && !d.open) d.showModal();
-    if (!abierto && d?.open) d.close();
-  }, [abierto]);
 
   function reiniciar() {
     setFilas([]);
@@ -104,21 +95,13 @@ export function ImportarConocimiento({
     }
     reiniciar();
     router.refresh();
-    alCerrar(`Se publicaron ${r.creadas} respuestas en la base del bot.`);
+    alPublicar(`Se publicaron ${r.creadas} respuestas en la base del bot.`);
   }
 
   return (
-    <dialog
-      ref={dialogo}
-      onClose={() => {
-        reiniciar();
-        alCerrar();
-      }}
-      aria-labelledby="importar-titulo"
-      className="m-auto flex max-h-[90dvh] w-[min(44rem,calc(100vw-2rem))] flex-col rounded-panel border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-black/40"
-    >
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="border-b border-line px-5 py-4">
-        <h2 id="importar-titulo" className="text-base font-semibold">
+        <h2 className="text-sm font-semibold">
           Importar a la base del bot
         </h2>
         <p className="mt-1 text-xs text-ink-soft">
@@ -214,8 +197,8 @@ export function ImportarConocimiento({
             <p className="text-xs text-ink-soft">Se publica en el bot de {tenantName}.</p>
           )}
           <div className="flex justify-end gap-2">
-            <Boton type="button" disabled={cargando} onClick={() => alCerrar()}>
-              Cancelar
+            <Boton type="button" disabled={cargando} onClick={reiniciar}>
+              Elegir otro archivo
             </Boton>
             <Boton
               type="button"
@@ -227,13 +210,7 @@ export function ImportarConocimiento({
             </Boton>
           </div>
         </footer>
-      ) : (
-        <footer className="flex justify-end border-t border-line px-5 py-3">
-          <Boton type="button" onClick={() => alCerrar()}>
-            Cerrar
-          </Boton>
-        </footer>
-      )}
-    </dialog>
+      ) : null}
+    </div>
   );
 }

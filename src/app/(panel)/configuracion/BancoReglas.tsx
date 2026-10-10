@@ -40,13 +40,12 @@ export function BancoReglas({
   bots?: { id: string; nombre: string }[];
 }) {
   const router = useRouter();
-  const [importarAbierto, setImportarAbierto] = useState(false);
   // Admin, regla nueva: en qué bots se crea (una copia por bot).
   const [botsElegidos, setBotsElegidos] = useState<string[]>([tenantId]);
   const reglas = useMemo(() => casos.filter((c) => !esCorreccion(c)), [casos]);
   const correcciones = useMemo(() => casos.filter(esCorreccion), [casos]);
-  const [pestana, setPestana] = useState<"reglas" | "correcciones">("reglas");
-  const listado = pestana === "reglas" ? reglas : correcciones;
+  const [pestana, setPestana] = useState<"reglas" | "correcciones" | "importar">("reglas");
+  const listado = pestana === "correcciones" ? correcciones : reglas;
   const [seleccion, setSeleccion] = useState<string | "nueva" | null>(
     reglas[0]?.id ?? "nueva",
   );
@@ -153,7 +152,7 @@ export function BancoReglas({
         }`}
       >
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <div className="flex items-center gap-1 rounded-control bg-sunk p-0.5">
+          <div className="flex items-center gap-1 rounded-control bg-sunk p-0.5 max-md:w-full">
             <button
               type="button"
               onClick={() => {
@@ -161,7 +160,7 @@ export function BancoReglas({
                 setEnDetalle(false);
                 abrir(reglas[0] ?? "nueva");
               }}
-              className={`rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:px-3 max-md:text-sm ${
+              className={`whitespace-nowrap rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:flex-1 max-md:px-2 max-md:text-sm ${
                 pestana === "reglas" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
               }`}
             >
@@ -176,22 +175,24 @@ export function BancoReglas({
                 if (primera) abrir(primera);
                 else setSeleccion(null);
               }}
-              className={`rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:px-3 max-md:text-sm ${
+              className={`whitespace-nowrap rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:flex-1 max-md:px-2 max-md:text-sm ${
                 pestana === "correcciones" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
               }`}
             >
               Correcciones · {correcciones.length}
             </button>
+            <button
+              type="button"
+              onClick={() => setPestana("importar")}
+              className={`whitespace-nowrap rounded-control px-2.5 py-1 text-xs font-semibold max-md:min-h-8 max-md:flex-1 max-md:px-2 max-md:text-sm ${
+                pestana === "importar" ? "bg-surface text-ink shadow-sm" : "text-ink-soft"
+              }`}
+            >
+              Importar
+            </button>
           </div>
           {pestana === "reglas" ? (
             <div className="flex gap-2">
-              <Boton
-                type="button"
-                className="!min-h-8 !px-2.5 !py-1 text-xs"
-                onClick={() => setImportarAbierto(true)}
-              >
-                Importar archivo
-              </Boton>
               <Boton
                 type="button"
                 className="!min-h-8 !px-2.5 !py-1 text-xs"
@@ -206,6 +207,18 @@ export function BancoReglas({
           ) : null}
         </header>
 
+        {pestana === "importar" ? (
+          <ImportarConocimiento
+            tenantId={tenantId}
+            tenantName={tenantName}
+            esAdmin={esAdmin}
+            bots={bots.length ? bots : [{ id: tenantId, nombre: tenantName }]}
+            alPublicar={(mensaje) => {
+              setPestana("reglas");
+              setAviso(mensaje);
+            }}
+          />
+        ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           {/* En movil la lista ocupa todo; tocar una regla abre el editor en su lugar. */}
           <ul className={`overflow-y-auto border-line md:border-r ${enDetalle ? "max-md:hidden" : ""}`}>
@@ -479,6 +492,7 @@ export function BancoReglas({
           </form>
           )}
         </div>
+        )}
       </section>
 
       <section
@@ -639,17 +653,6 @@ export function BancoReglas({
           </button>
         </div>
       </dialog>
-      <ImportarConocimiento
-        tenantId={tenantId}
-        tenantName={tenantName}
-        esAdmin={esAdmin}
-        bots={bots.length ? bots : [{ id: tenantId, nombre: tenantName }]}
-        abierto={importarAbierto}
-        alCerrar={(mensaje) => {
-          setImportarAbierto(false);
-          if (mensaje) setAviso(mensaje);
-        }}
-      />
     </div>
   );
 }
