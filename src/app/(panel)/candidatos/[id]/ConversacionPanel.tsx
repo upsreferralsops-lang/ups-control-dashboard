@@ -461,12 +461,6 @@ export function ConversacionPanel({
       className="flex min-h-0 min-w-0 flex-col md:h-full"
       cuerpoClassName="flex min-h-0 flex-1 flex-col gap-3 p-5 max-md:px-4 md:overflow-hidden"
     >
-      {marcando && (
-        <p className="shrink-0 rounded-control border border-warn-border bg-signal-wash px-3 py-2 text-xs text-signal-ink">
-          Tocá un mensaje (candidato o bot) para anclar la corrección. La regla aplica solo al
-          bot de <strong>{tenantName}</strong>, no a otros clientes.
-        </p>
-      )}
 
       {barraChat &&
         createPortal(
@@ -565,8 +559,22 @@ export function ConversacionPanel({
         })}
       </div>
 
+      {/* Marcando: el aviso y el formulario van donde estaba la caja de mensaje
+          (fijos abajo en el celular), así no hay que bajar a buscarlos. */}
+      {marcando && !seleccionado && (
+        <div className="flex shrink-0 items-center gap-2 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="min-w-0 flex-1 rounded-control border border-warn-border bg-signal-wash px-3 py-2 text-xs text-signal-ink">
+            Tocá un mensaje (candidato o bot) para anclar la corrección. Aplica solo al bot de{" "}
+            <strong>{tenantName}</strong>.
+          </p>
+          <Boton type="button" className="shrink-0" onClick={cancelarMarcado}>
+            Cancelar
+          </Boton>
+        </div>
+      )}
+
       {seleccionado && (
-        <div className="shrink-0 space-y-2 border-t border-line pt-3">
+        <div className="shrink-0 space-y-2 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-xs text-ink-soft">
             Mensaje anclado ({seleccionado.direction === "in" ? "candidato" : "bot"}):{" "}
             <span className="text-ink">
