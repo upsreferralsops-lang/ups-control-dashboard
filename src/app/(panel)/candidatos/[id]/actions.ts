@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   confirmReferral,
   createImprovementCase,
+  deleteCandidate,
   getCandidate,
   sendOperatorMessage,
   setCandidateBot,
@@ -29,6 +30,23 @@ export async function cambiarBot(
     return {
       ok: false,
       error: error instanceof Error ? error.message : "No se pudo cambiar el estado del bot.",
+    };
+  }
+}
+
+/** Borra el candidato y todo su chat. Si vuelve a escribir, arranca de cero. */
+export async function reiniciarConversacion(
+  candidateId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await deleteCandidate(candidateId);
+    revalidatePath("/candidatos");
+    revalidatePath("/");
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "No se pudo reiniciar la conversación.",
     };
   }
 }

@@ -525,6 +525,10 @@ export const setCandidateBot = (id: string, active: boolean) =>
     body: JSON.stringify({ active }),
   });
 
+/** Reinicia la conversacion: borra el candidato, su chat y sus datos (pruebas). */
+export const deleteCandidate = (id: string) =>
+  request<{ ok: boolean }>(`/api/candidates/${id}`, { method: "DELETE" });
+
 /** HITL: una persona le escribe al candidato (sale por el bot; pausa el bot). */
 export const sendOperatorMessage = (id: string, text: string) =>
   request<{ id: number; created_at: string; author_name: string; bot_paused: boolean }>(
