@@ -103,12 +103,14 @@ export async function crearMejora(
   messageId: number,
   guidance: string,
   guardarEnBase = false,
+  enviarAlCandidato = false,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await createImprovementCase(candidateId, {
       message_id: messageId,
       guidance: guidance.trim(),
       guardar_en_base: guardarEnBase,
+      enviar_al_candidato: enviarAlCandidato,
     });
     revalidatePath(`/candidatos/${candidateId}`);
     revalidatePath(`/candidatos/${candidateId}/historial`);

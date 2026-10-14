@@ -541,7 +541,7 @@ export const listImprovementCases = (candidateId: string) =>
 
 export const createImprovementCase = (
   candidateId: string,
-  body: { message_id: number; guidance: string; guardar_en_base?: boolean },
+  body: { message_id: number; guidance: string; guardar_en_base?: boolean; enviar_al_candidato?: boolean },
 ) =>
   request<ImprovementCase>(`/api/candidates/${candidateId}/improvements`, {
     method: "POST",

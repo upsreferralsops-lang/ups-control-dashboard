@@ -215,6 +215,7 @@ export function ConversacionPanel({
   const [seleccionado, setSeleccionado] = useState<Message | null>(null);
   const [guidance, setGuidance] = useState("");
   const [guardarEnBase, setGuardarEnBase] = useState(false);
+  const [enviarAlCandidato, setEnviarAlCandidato] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
@@ -329,6 +330,7 @@ export function ConversacionPanel({
     setSeleccionado(null);
     setGuidance("");
     setGuardarEnBase(false);
+    setEnviarAlCandidato(false);
     setError(null);
   }
 
@@ -340,7 +342,7 @@ export function ConversacionPanel({
       return;
     }
     iniciar(async () => {
-      const result = await crearMejora(candidateId, messageId, guidance, guardarEnBase);
+      const result = await crearMejora(candidateId, messageId, guidance, guardarEnBase, enviarAlCandidato);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -613,8 +615,23 @@ export function ConversacionPanel({
               </span>
             </span>
           </label>
+          <label className="flex items-start gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={enviarAlCandidato}
+              onChange={(e) => setEnviarAlCandidato(e.target.checked)}
+              disabled={pendiente}
+            />
+            <span>
+              Enviarle la respuesta corregida al candidato
+              <span className="block text-[11px] text-ink-faint">
+                El bot le escribe ahora con la versión correcta.
+              </span>
+            </span>
+          </label>
           <p className="text-[11px] text-ink-faint">
-            El bot le escribe ahora a este candidato.{" "}
+            {enviarAlCandidato ? "El candidato recibe un mensaje nuevo." : "Al candidato no le llega nada."}{" "}
             {guardarEnBase ? "Y queda como respuesta permanente de su bot." : "No se reutiliza en otros chats."}
           </p>
           {error && <p className="text-xs text-bad">{error}</p>}
