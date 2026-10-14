@@ -632,7 +632,7 @@ export function ConversacionPanel({
           </label>
           <p className="text-[11px] text-ink-faint">
             {enviarAlCandidato ? "El candidato recibe un mensaje nuevo." : "Al candidato no le llega nada."}{" "}
-            {guardarEnBase ? "Y queda como respuesta permanente de su bot." : "No se reutiliza en otros chats."}
+            {guardarEnBase ? "Y queda como respuesta permanente de su bot (todos sus chats)." : "El bot la sigue en esta conversación; no cambia otros chats."}
           </p>
           {error && <p className="text-xs text-bad">{error}</p>}
           <div className="flex gap-2">
