@@ -1,64 +1,45 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Aviso, Boton } from "@/components/ui";
+import { useTransition } from "react";
+import { IconoActualizar } from "@/lib/icons";
 import { reiniciarConversacion } from "./actions";
 
 /**
  * Para pruebas: borra el candidato, su chat y sus datos. Si vuelve a
  * escribir, el bot lo atiende como a alguien nuevo. No se puede deshacer.
+ * Vive en la barra del chat, que en el teléfono queda fija al hacer scroll.
  */
-export function ReiniciarConversacion({ candidateId }: { candidateId: string }) {
+export function ReiniciarConversacion({
+  candidateId,
+  className = "",
+}: {
+  candidateId: string;
+  className?: string;
+}) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
-  const [confirmando, setConfirmando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function reiniciar() {
-    setError(null);
+    // ponytail: confirm nativo, se ve bien en el teléfono y no ocupa lugar en la barra
+    if (!window.confirm("¿Reiniciar la conversación?\n\nSe borran el chat y todos los datos del candidato. No se puede deshacer.")) return;
     iniciar(async () => {
       const r = await reiniciarConversacion(candidateId);
       if (r.ok) router.replace("/candidatos");
-      else {
-        setError(r.error);
-        setConfirmando(false);
-      }
+      else window.alert(r.error);
     });
   }
 
   return (
-    <div className="flex shrink-0 flex-col items-end gap-2">
-      {confirmando ? (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <span className="text-xs text-ink-soft">
-            Se borran el chat y todos los datos del candidato. No se puede deshacer.
-          </span>
-          <Boton
-            disabled={pendiente}
-            className="!min-h-8 border-bad !py-1 text-xs text-bad hover:bg-bad-wash hover:text-bad"
-            onClick={reiniciar}
-          >
-            {pendiente ? "Borrando…" : "Sí, reiniciar"}
-          </Boton>
-          <Boton
-            disabled={pendiente}
-            className="!min-h-8 !py-1 text-xs"
-            onClick={() => setConfirmando(false)}
-          >
-            Cancelar
-          </Boton>
-        </div>
-      ) : (
-        <Boton
-          className="!min-h-8 !py-1 text-xs"
-          title="Borra el chat y los datos del candidato para probar el flujo desde cero"
-          onClick={() => setConfirmando(true)}
-        >
-          Reiniciar conversación
-        </Boton>
-      )}
-      {error && <Aviso tono="bad">{error}</Aviso>}
-    </div>
+    <button
+      type="button"
+      onClick={reiniciar}
+      disabled={pendiente}
+      aria-label="Reiniciar conversación"
+      title="Reiniciar conversación (borra el chat y los datos del candidato)"
+      className={`${className} ${pendiente ? "animate-spin" : ""}`}
+    >
+      <IconoActualizar className="h-4 w-4" />
+    </button>
   );
 }

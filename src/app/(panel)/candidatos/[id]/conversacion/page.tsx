@@ -6,7 +6,6 @@ import { canalesConversacion, loadCandidatoDetalle } from "@/lib/candidato-detal
 import { requireSession } from "@/lib/session";
 import { Aviso } from "@/components/ui";
 import { ConversacionPanel } from "../ConversacionPanel";
-import { ReiniciarConversacion } from "../ReiniciarConversacion";
 import { SelectorCanalConversacion } from "./SelectorCanalConversacion";
 import { esCanalActivo } from "@/lib/canales";
 
@@ -87,8 +86,6 @@ export default async function CandidatoConversacionPage({
           <SelectorCanalConversacion candidateId={id} canales={canales} canalActivo={canalActivo} />
         </Suspense>
       ) : null}
-
-      <ReiniciarConversacion candidateId={id} />
 
       <ConversacionPanel
         conversation={conversation}

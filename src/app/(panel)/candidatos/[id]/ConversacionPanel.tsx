@@ -17,6 +17,7 @@ import { timeAgo } from "@/lib/status";
 import { Bloque, Boton, CAMPO } from "@/components/ui";
 import { IconoAdjuntar, IconoBuscar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
 import { crearMejora, enviarMensaje, leerConversacion } from "./actions";
+import { ReiniciarConversacion } from "./ReiniciarConversacion";
 
 // El hueco de la barra fija del celular (CandidatoEncabezado). En el servidor
 // no existe: useSyncExternalStore evita el desfasaje de hidratacion.
@@ -443,6 +444,10 @@ export function ConversacionPanel({
         >
           <IconoBuscar className="h-4 w-4" />
         </button>
+        <ReiniciarConversacion
+          candidateId={candidateId}
+          className={`${BOTON_CHICO} border border-line bg-surface hover:!text-bad`}
+        />
         <Boton
           type="button"
           variante={marcando ? "accent" : "neutro"}
