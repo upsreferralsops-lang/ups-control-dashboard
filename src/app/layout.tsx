@@ -17,7 +17,9 @@ export const metadata: Metadata = {
 };
 
 // Barra del navegador/sistema del color de la barra superior del panel.
-export const viewport: Viewport = { themeColor: "#ffffff" };
+// Android: con el teclado abierto se achica la pagina (no solo la parte visible),
+// asi los encabezados fijos (chat del candidato, asistente) no quedan cortados arriba.
+export const viewport: Viewport = { themeColor: "#ffffff", interactiveWidget: "resizes-content" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
