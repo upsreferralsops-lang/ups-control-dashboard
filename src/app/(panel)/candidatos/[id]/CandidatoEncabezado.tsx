@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Candidate } from "@/lib/api";
 import { IconoVolver } from "@/lib/icons";
 import { fullName, presentacionReferido } from "@/lib/status";
 import { Aviso, Estado, Etiqueta } from "@/components/ui";
 import { CandidatoSubnav } from "./CandidatoSubnav";
 import { ControlBot } from "./ControlBot";
+import { EncabezadoChat } from "./EncabezadoChat";
 import { MOSTRAR_CANAL } from "@/lib/canales";
 
 export function CandidatoEncabezado({
@@ -14,9 +18,21 @@ export function CandidatoEncabezado({
   candidateId: string;
   candidate: Candidate & Record<string, unknown>;
 }) {
+  const pathname = usePathname();
   const estado = presentacionReferido(candidate);
   const pausado = Boolean(candidate.bot_paused);
   const motivoEscalada = candidate.human_escalation_reason ?? null;
+  // En el chat, solo la fila tipo Telegram (← nombre ⋮): el resto ocupa espacio.
+  if (pathname.endsWith("/conversacion")) {
+    return (
+      <EncabezadoChat
+        candidateId={candidateId}
+        nombre={fullName(candidate)}
+        pausado={pausado}
+        motivoEscalada={motivoEscalada}
+      />
+    );
+  }
   // Rechazado: 90 días sin poder aplicar (misma regla que app/logic.py del core).
   const puedeVolverDesde =
     candidate.referral_status === "rejected" && candidate.rejected_at
@@ -66,8 +82,6 @@ export function CandidatoEncabezado({
       <div className="shrink-0 max-md:sticky max-md:top-14 max-md:z-20 max-md:-mx-5 max-md:-mt-2 max-md:border-b max-md:border-line max-md:bg-paper max-md:px-5 max-md:py-2 sm:max-md:-mx-8 sm:max-md:px-8">
         <ControlBot candidateId={candidateId} pausado={pausado} />
         <CandidatoSubnav candidateId={candidateId} />
-        {/* La pestaña Conversación pone aca la lupa y «Marcar corrección» (portal). */}
-        <div id="barra-chat" className="md:hidden" />
       </div>
     </>
   );

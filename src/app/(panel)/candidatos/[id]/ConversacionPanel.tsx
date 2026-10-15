@@ -6,22 +6,31 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   useTransition,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Message } from "@/lib/api";
-import { timeAgo } from "@/lib/status";
-import { Bloque, Boton, CAMPO } from "@/components/ui";
+import { Boton, CAMPO } from "@/components/ui";
 import { IconoAdjuntar, IconoBuscar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
 import { crearMejora, enviarMensaje, leerConversacion } from "./actions";
-import { ReiniciarConversacion } from "./ReiniciarConversacion";
+import type { AccionChat } from "./EncabezadoChat";
 
-// El hueco de la barra fija del celular (CandidatoEncabezado). En el servidor
-// no existe: useSyncExternalStore evita el desfasaje de hidratacion.
-const sinSuscripcion = () => () => {};
+// Celular: lo de abajo (caja de mensaje, corrección) queda pegado al borde de
+// la pantalla; se come el padding del <main> del panel (px-5/8, py-6/8).
+const FIJO_ABAJO =
+  "max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-5 max-md:-mb-6 max-md:bg-paper max-md:px-5 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-md:-mx-8 sm:max-md:-mb-8 sm:max-md:px-8";
+
+/** Hora del mensaje, como en Telegram (la fecha completa queda en el title). */
+function hora(iso: string | null | undefined): string {
+  return iso ? new Date(iso).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "";
+}
+
+/** Quién habla: la etiqueta se muestra solo cuando cambia el que escribe. */
+function autor(m: Message): string {
+  if (m.direction === "in") return "candidato";
+  return m.author_name || (m.is_automatic ? "aviso automático" : "bot");
+}
 const BOTON_CHICO =
   "grid h-8 w-8 shrink-0 place-items-center rounded-control text-ink-soft transition-colors hover:bg-sunk hover:text-ink disabled:opacity-40";
 
@@ -220,12 +229,7 @@ export function ConversacionPanel({
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
   const [buscarAbierto, setBuscarAbierto] = useState(false);
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-  const barraChat = useSyncExternalStore(
-    sinSuscripcion,
-    () => document.getElementById("barra-chat"),
-    () => null,
-  );
+  const buscadorRef = useRef<HTMLInputElement>(null);
   const firmaRef = useRef(firmaChat(conversation));
 
   useEffect(() => {
@@ -351,27 +355,41 @@ export function ConversacionPanel({
     });
   }
 
-  function abrirBusqueda() {
-    setBuscarAbierto(true);
-    // Se enfoca el campo visible (escritorio o celular), no el oculto.
-    requestAnimationFrame(() => inputsRef.current.find((el) => el?.offsetParent)?.focus());
-  }
+  // El menú ⋮ del encabezado (EncabezadoChat) pide buscar o marcar.
+  useEffect(() => {
+    const buscar = () => {
+      setBuscarAbierto(true);
+      requestAnimationFrame(() => buscadorRef.current?.focus());
+    };
+    const marcar = () => setMarcando(true);
+    const eventos: [AccionChat, () => void][] = [
+      ["chat:buscar", buscar],
+      ["chat:marcar", marcar],
+    ];
+    for (const [nombre, fn] of eventos) window.addEventListener(nombre, fn);
+    return () => {
+      for (const [nombre, fn] of eventos) window.removeEventListener(nombre, fn);
+    };
+  }, []);
 
   function cerrarBusqueda() {
     setBuscarAbierto(false);
     setConsulta("");
   }
 
-  // Como en WhatsApp/Telegram: una lupa; al tocarla la fila pasa a ser el buscador.
-  const herramientas = (i: number) =>
-    buscarAbierto ? (
-      <div className="flex min-w-0 flex-1 items-center gap-1">
+  return (
+    // Celular: un solo scroll, el de la pagina; la caja de mensaje queda pegada
+    // abajo. Escritorio: el chat ocupa todo el alto y scrollea por dentro.
+    <section
+      aria-label={canalLabel ? `Conversación · ${canalLabel}` : "Conversación"}
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 md:h-full md:overflow-hidden"
+    >
+      {buscarAbierto && (
+      <div className="flex shrink-0 items-center gap-1">
         <div className="relative min-w-0 flex-1">
           <IconoBuscar className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <input
-            ref={(el) => {
-              inputsRef.current[i] = el;
-            }}
+            ref={buscadorRef}
             type="search"
             enterKeyHint="search"
             value={consulta}
@@ -432,54 +450,11 @@ export function ConversacionPanel({
           <IconoCerrar className="h-3.5 w-3.5" />
         </button>
       </div>
-    ) : (
-      <div className="flex items-center gap-2 max-md:flex-1">
-        <span className="text-xs tabular-nums text-ink-faint max-md:mr-auto">
-          {`${msgs.length} mensajes · ${timeAgo(msgs.at(-1)?.created_at ?? null)}`}
-        </span>
-        <button
-          type="button"
-          onClick={abrirBusqueda}
-          aria-label="Buscar en el chat"
-          title="Buscar en el chat"
-          className={`${BOTON_CHICO} border border-line bg-surface`}
-        >
-          <IconoBuscar className="h-4 w-4" />
-        </button>
-        <ReiniciarConversacion
-          candidateId={candidateId}
-          className={`${BOTON_CHICO} border border-line bg-surface hover:!text-bad`}
-        />
-        <Boton
-          type="button"
-          variante={marcando ? "accent" : "neutro"}
-          className="!min-h-8 !px-2 !py-1 text-xs"
-          onClick={() => (marcando ? cancelarMarcado() : setMarcando(true))}
-        >
-          {marcando ? "Cancelar marcado" : "Marcar corrección"}
-        </Boton>
-      </div>
-    );
-
-  return (
-    <Bloque
-      titulo={canalLabel ? `Conversación · ${canalLabel}` : "Conversación"}
-      extra={<div className="flex min-w-0 flex-1 justify-end max-md:hidden">{herramientas(0)}</div>}
-      // Celular: un solo scroll, el de la pagina. El chat crece y la caja de
-      // mensaje queda pegada abajo. Escritorio: el chat scrollea por dentro.
-      className="flex min-h-0 min-w-0 flex-col md:h-full"
-      cuerpoClassName="flex min-h-0 flex-1 flex-col gap-3 p-5 max-md:px-4 md:overflow-hidden"
-    >
-
-      {barraChat &&
-        createPortal(
-          <div className="mt-2 flex min-h-8 items-center">{herramientas(1)}</div>,
-          barraChat,
-        )}
+      )}
 
       <div
         ref={listaRef}
-        className="flex min-h-0 flex-1 flex-col gap-3 pr-1 max-md:[&>*]:scroll-mb-32 md:overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col pr-1 max-md:[&>*]:scroll-mb-32 md:overflow-y-auto"
       >
         {msgs.length === 0 && (
           <p className="py-8 text-center text-sm text-ink-soft">Todavía no hay mensajes.</p>
@@ -506,6 +481,7 @@ export function ConversacionPanel({
             m.id != null && m.id !== "" ? `msg-${m.id}` : undefined;
           // Escrito por una persona desde el panel: se distingue del bot.
           const humano = !entrante && Boolean(m.author_name);
+          const nuevoAutor = msgIdx === 0 || autor(msgs[msgIdx - 1]) !== autor(m);
           const burbuja = (
             <div
               id={msgDomId}
@@ -525,16 +501,36 @@ export function ConversacionPanel({
                 </div>
               )}
               {m.text && m.text.trim() !== CAPTION_CAPTURA && (
-                <p className="whitespace-pre-wrap break-words">{nodos}</p>
+                <span className="whitespace-pre-wrap break-words">{nodos}</span>
               )}
+              <time
+                dateTime={m.created_at ?? undefined}
+                title={m.created_at ? new Date(m.created_at).toLocaleString("es") : undefined}
+                // La zona horaria del servidor no es la del navegador.
+                suppressHydrationWarning
+                className="float-right ml-3 mt-1.5 translate-y-0.5 text-[10px] leading-none text-ink-faint"
+              >
+                {hora(m.created_at)}
+              </time>
             </div>
           );
 
           return (
             <div
               key={String(m.id ?? `${m.created_at}-${msgIdx}`)}
-              className={`flex max-w-[85%] flex-col ${entrante ? "self-start" : "self-end"}`}
+              className={`flex max-w-[85%] flex-col md:max-w-[70%] ${entrante ? "self-start" : "self-end"} ${
+                nuevoAutor ? "mt-3 first:mt-0" : "mt-1"
+              }`}
             >
+              {nuevoAutor && (
+                <p
+                  className={`mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-faint ${
+                    entrante ? "text-left" : "text-right"
+                  }`}
+                >
+                  {autor(m)}
+                </p>
+              )}
               {marcando ? (
                 <button
                   type="button"
@@ -549,20 +545,6 @@ export function ConversacionPanel({
               ) : (
                 burbuja
               )}
-              <p
-                className={`mt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-faint ${
-                  entrante ? "text-left" : "text-right"
-                }`}
-              >
-                {entrante
-                  ? "candidato"
-                  : m.author_name
-                    ? m.author_name
-                    : m.is_automatic
-                      ? "aviso automático"
-                      : "bot"}{" "}
-                · {timeAgo(m.created_at)}
-              </p>
             </div>
           );
         })}
@@ -571,7 +553,7 @@ export function ConversacionPanel({
       {/* Marcando: el aviso y el formulario van donde estaba la caja de mensaje
           (fijos abajo en el celular), así no hay que bajar a buscarlos. */}
       {marcando && !seleccionado && (
-        <div className="flex shrink-0 items-center gap-2 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className={`flex shrink-0 items-center gap-2 border-t border-line pt-3 ${FIJO_ABAJO}`}>
           <p className="min-w-0 flex-1 rounded-control border border-warn-border bg-signal-wash px-3 py-2 text-xs text-signal-ink">
             Tocá un mensaje (candidato o bot) para anclar la corrección. Aplica solo al bot de{" "}
             <strong>{tenantName}</strong>.
@@ -583,7 +565,7 @@ export function ConversacionPanel({
       )}
 
       {seleccionado && (
-        <div className="shrink-0 space-y-2 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className={`shrink-0 space-y-2 border-t border-line pt-3 ${FIJO_ABAJO}`}>
           <p className="text-xs text-ink-soft">
             Mensaje anclado ({seleccionado.direction === "in" ? "candidato" : "bot"}):{" "}
             <span className="text-ink">
@@ -658,7 +640,7 @@ export function ConversacionPanel({
           alEnviar={actualizar}
         />
       )}
-    </Bloque>
+    </section>
   );
 }
 
@@ -832,18 +814,12 @@ function EscribirAlCandidato({
 
   return (
     <form
-      className="flex shrink-0 flex-col gap-1.5 border-t border-line pt-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-5 max-md:bg-surface max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className={`flex shrink-0 flex-col gap-1.5 border-t border-line pt-3 ${FIJO_ABAJO}`}
       onSubmit={(e) => {
         e.preventDefault();
         void enviar();
       }}
     >
-      {!botPausado && (
-        <p className="text-[11px] text-ink-faint">
-          Al enviar, el bot se pausa con este candidato y lo atendés vos.
-        </p>
-      )}
-
       {archivo && (
         <div className="flex items-center gap-2 self-start rounded-control border border-line bg-sunk px-2.5 py-1.5 text-xs text-ink-soft">
           <IconoAdjuntar className="h-3.5 w-3.5 shrink-0" />
@@ -907,7 +883,7 @@ function EscribirAlCandidato({
             value={texto}
             disabled={enviando}
             maxLength={archivo ? 1024 : 4000}
-            placeholder={archivo ? "Agregá un texto (opcional)…" : "Escribile al candidato…"}
+            placeholder={archivo ? "Agregá un texto (opcional)…" : botPausado ? "Escribile al candidato…" : "Escribile (el bot se pausa al enviar)…"}
             onChange={(e) => {
               setTexto(e.target.value);
               ajustarAlto(e.currentTarget);

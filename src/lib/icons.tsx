@@ -377,6 +377,14 @@ export function IconoMenu({ className = "h-4 w-4" }: Props) {
   );
 }
 
+export function IconoMasOpciones({ className = "h-4 w-4" }: Props) {
+  return (
+    <svg {...base} className={className} strokeWidth={2.5}>
+      <path d="M12 5.5h.01M12 12h.01M12 18.5h.01" />
+    </svg>
+  );
+}
+
 export function IconoCampana({ className = "h-4 w-4" }: Props) {
   return (
     <svg {...base} className={className}>

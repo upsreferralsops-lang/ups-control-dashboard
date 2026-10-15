@@ -9,15 +9,18 @@ import { reiniciarConversacion } from "./actions";
 /**
  * Para pruebas: borra el candidato, su chat y sus datos. Si vuelve a
  * escribir, el bot lo atiende como a alguien nuevo. No se puede deshacer.
- * Vive en la barra del chat, que en el teléfono queda fija al hacer scroll.
+ * Vive en el menu ⋮ del chat.
  * Mismo modal que "Borrar regla" (BancoReglas): <dialog> nativo.
  */
 export function ReiniciarConversacion({
   candidateId,
   className = "",
+  children,
 }: {
   candidateId: string;
   className?: string;
+  /** Contenido del boton; por defecto, solo el icono. */
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const dialogoRef = useRef<HTMLDialogElement>(null);
@@ -44,7 +47,7 @@ export function ReiniciarConversacion({
         title="Reiniciar conversación (borra el chat y los datos del candidato)"
         className={className}
       >
-        <IconoActualizar className="h-4 w-4" />
+        {children ?? <IconoActualizar className="h-4 w-4" />}
       </button>
 
       <dialog
