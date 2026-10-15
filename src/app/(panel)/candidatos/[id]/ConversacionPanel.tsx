@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import type { Message } from "@/lib/api";
 import { Boton, CAMPO } from "@/components/ui";
-import { IconoAdjuntar, IconoBuscar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
+import { IconoAdjuntar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
 import { crearMejora, enviarMensaje, leerConversacion } from "./actions";
 import type { AccionChat } from "./EncabezadoChat";
 
@@ -31,8 +31,6 @@ function autor(m: Message): string {
   if (m.direction === "in") return "candidato";
   return m.author_name || (m.is_automatic ? "aviso automático" : "bot");
 }
-const BOTON_CHICO =
-  "grid h-8 w-8 shrink-0 place-items-center rounded-control text-ink-soft transition-colors hover:bg-sunk hover:text-ink disabled:opacity-40";
 
 const CAPTION_CAPTURA = "Captura del referido / apply en UPS";
 
@@ -229,7 +227,6 @@ export function ConversacionPanel({
   const [pendiente, iniciar] = useTransition();
   const listaRef = useRef<HTMLDivElement>(null);
   const [buscarAbierto, setBuscarAbierto] = useState(false);
-  const buscadorRef = useRef<HTMLInputElement>(null);
   const firmaRef = useRef(firmaChat(conversation));
 
   useEffect(() => {
@@ -355,27 +352,23 @@ export function ConversacionPanel({
     });
   }
 
-  // El menú ⋮ del encabezado (EncabezadoChat) pide buscar o marcar.
+  // El encabezado (EncabezadoChat) tiene el buscador y el menú ⋮; avisa por eventos.
   useEffect(() => {
-    const buscar = () => {
-      setBuscarAbierto(true);
-      requestAnimationFrame(() => buscadorRef.current?.focus());
-    };
-    const marcar = () => setMarcando(true);
-    const eventos: [AccionChat, () => void][] = [
-      ["chat:buscar", buscar],
-      ["chat:marcar", marcar],
+    const eventos: [AccionChat, (e: Event) => void][] = [
+      ["chat:buscar", () => setBuscarAbierto(true)],
+      ["chat:consulta", (e) => setConsulta((e as CustomEvent<string>).detail)],
+      ["chat:cerrar-busqueda", () => {
+        setBuscarAbierto(false);
+        setConsulta("");
+      }],
+      ["chat:anterior", () => ir(1)],
+      ["chat:marcar", () => setMarcando(true)],
     ];
     for (const [nombre, fn] of eventos) window.addEventListener(nombre, fn);
     return () => {
       for (const [nombre, fn] of eventos) window.removeEventListener(nombre, fn);
     };
-  }, []);
-
-  function cerrarBusqueda() {
-    setBuscarAbierto(false);
-    setConsulta("");
-  }
+  }, [ir]);
 
   return (
     // Celular: un solo scroll, el de la pagina; la caja de mensaje queda pegada
@@ -384,85 +377,12 @@ export function ConversacionPanel({
       aria-label={canalLabel ? `Conversación · ${canalLabel}` : "Conversación"}
       className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 md:h-full md:overflow-hidden"
     >
-      {buscarAbierto && (
-      <div className="flex shrink-0 items-center gap-1">
-        <div className="relative min-w-0 flex-1">
-          <IconoBuscar className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            ref={buscadorRef}
-            type="search"
-            enterKeyHint="search"
-            value={consulta}
-            onChange={(e) => setConsulta(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowUp" || (e.key === "Enter" && !e.nativeEvent.isComposing)) {
-                e.preventDefault();
-                ir(1); // mas antigua → subir en el chat
-              } else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                ir(-1); // mas reciente → bajar
-              } else if (e.key === "Escape") {
-                cerrarBusqueda();
-              }
-            }}
-            placeholder="Buscar en el chat…"
-            aria-label="Buscar en la conversación"
-            className={`${CAMPO} !min-h-8 w-full py-1.5 pl-8 pr-2 [&::-webkit-search-cancel-button]:hidden`}
-          />
-        </div>
-        <span
-          className="min-w-[3.25rem] text-center text-xs tabular-nums text-ink-soft"
-          aria-live="polite"
-        >
-          {buscando ? (totalCoincidencias === 0 ? "0 / 0" : `${activo + 1} / ${totalCoincidencias}`) : ""}
-        </span>
-        <button
-          type="button"
-          onClick={() => ir(1)}
-          disabled={totalCoincidencias === 0}
-          aria-label="Coincidencia más antigua"
-          title="Más antigua (↑)"
-          className={BOTON_CHICO}
-        >
-          <span className="text-sm leading-none" aria-hidden>
-            ↑
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => ir(-1)}
-          disabled={totalCoincidencias === 0}
-          aria-label="Coincidencia más reciente"
-          title="Más reciente (↓)"
-          className={BOTON_CHICO}
-        >
-          <span className="text-sm leading-none" aria-hidden>
-            ↓
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={cerrarBusqueda}
-          aria-label="Cerrar búsqueda"
-          title="Cerrar búsqueda"
-          className={BOTON_CHICO}
-        >
-          <IconoCerrar className="h-3.5 w-3.5" />
-        </button>
-      </div>
-      )}
-
       <div
         ref={listaRef}
         className="flex min-h-0 flex-1 flex-col pr-1 max-md:[&>*]:scroll-mb-32 md:overflow-y-auto"
       >
         {msgs.length === 0 && (
           <p className="py-8 text-center text-sm text-ink-soft">Todavía no hay mensajes.</p>
-        )}
-        {msgs.length > 0 && buscando && totalCoincidencias === 0 && (
-          <p className="shrink-0 rounded-control border border-line bg-sunk px-3 py-2 text-center text-xs text-ink-soft">
-            Ningún mensaje coincide con «{q}»; se muestra la conversación completa.
-          </p>
         )}
         {msgs.map((m, msgIdx) => {
           const entrante = m.direction === "in";
@@ -633,7 +553,42 @@ export function ConversacionPanel({
         </div>
       )}
 
-      {puedeEscribir && !marcando && !seleccionado && (
+      {/* Como en Telegram: buscando, abajo va el contador y las flechas quedan
+          a mano del pulgar, encima de esa barra. */}
+      {buscarAbierto && (
+        <div className={`relative flex min-h-12 shrink-0 items-center border-t border-line pt-3 ${FIJO_ABAJO}`}>
+          <p className="text-sm font-medium tabular-nums text-ink" aria-live="polite">
+            {!buscando
+              ? "Escribí arriba para buscar"
+              : totalCoincidencias === 0
+                ? "Sin resultados"
+                : `${activo + 1} de ${totalCoincidencias}`}
+          </p>
+          <div className="absolute bottom-full right-4 mb-3 flex flex-col gap-2">
+            {(
+              [
+                [1, "Coincidencia más antigua", "M6 15l6-6 6 6"],
+                [-1, "Coincidencia más reciente", "M6 9l6 6 6-6"],
+              ] as const
+            ).map(([delta, etiqueta, d]) => (
+              <button
+                key={delta}
+                type="button"
+                onClick={() => ir(delta)}
+                disabled={totalCoincidencias < 2}
+                aria-label={etiqueta}
+                className="grid h-12 w-12 place-items-center rounded-full border border-line bg-surface text-ink shadow-lg transition-opacity disabled:opacity-40"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d={d} />
+                </svg>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {puedeEscribir && !marcando && !seleccionado && !buscarAbierto && (
         <EscribirAlCandidato
           candidateId={candidateId}
           botPausado={botPausado}

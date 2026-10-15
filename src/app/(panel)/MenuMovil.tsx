@@ -49,7 +49,10 @@ export function MenuMovil({ noLeidas, children }: { noLeidas: number; children: 
     <>
       <header
         id="barra-movil"
-        className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1 border-b border-line bg-surface px-2 md:hidden"
+        // En el chat de un candidato manda su propio encabezado (← nombre ⋮), como en Telegram.
+        className={`sticky top-0 z-30 h-14 shrink-0 items-center gap-1 border-b border-line bg-surface px-2 md:hidden ${
+          /^\/candidatos\/[^/]+\/conversacion/.test(pathname) ? "hidden" : "flex"
+        }`}
       >
         <button
           ref={botonRef}
