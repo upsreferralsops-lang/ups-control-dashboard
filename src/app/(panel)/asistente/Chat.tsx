@@ -148,12 +148,14 @@ export function AsistenteSala({
   // Solo en movil: chat e historial no entran juntos, se alterna con el switch.
   const [vista, setVista] = useState<"chat" | "historial">("chat");
 
-  // Celular: ocupa toda la pantalla bajo la barra (h-14) y solo scrollea el chat.
-  // Los margenes negativos anulan el padding de <main> (py-6 / sm:py-8).
+  // Celular: fijo bajo la barra (h-14) hasta el borde de abajo; solo scrollea el chat.
+  // Antes era un alto calculado dentro de <main>: con sus margenes y avisos la pagina
+  // tambien scrolleaba (dos scrolls) y la caja de texto se iba para arriba (15/10).
+  // Con el teclado abierto la pantalla se achica (interactive-widget) y bottom-0 lo sigue.
   return (
     <div
       data-fill-panel
-      className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] max-md:-mx-5 max-md:-my-6 max-md:h-[calc(100dvh-3.5rem)] max-md:min-h-0 max-md:flex-none max-md:rounded-none max-md:border-0 max-md:shadow-none sm:max-md:-mx-8 sm:max-md:-my-8 md:min-h-0"
+      className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-[var(--lift)] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-14 max-md:z-20 max-md:min-h-0 max-md:rounded-none max-md:border-0 max-md:shadow-none md:min-h-0"
     >
       <div className="border-b border-line p-2 md:hidden">
         <div role="tablist" aria-label="Vista del asistente" className="flex gap-1 rounded-control bg-sunk p-0.5">
@@ -264,7 +266,7 @@ function ListaHilos({
         </p>
       )}
 
-      <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-3 [scrollbar-color:var(--line-strong)_transparent]">
+      <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-2 pb-3 [scrollbar-color:var(--line-strong)_transparent]">
         {visibles.length === 0 && (
           <li className="px-3 py-8 text-center text-sm text-ink-soft">
             {filtro.trim()
@@ -394,7 +396,7 @@ function Conversacion({
 
       <div
         ref={scroller}
-        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 md:px-8 [scrollbar-color:var(--line-strong)_transparent]"
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-5 md:px-8 [scrollbar-color:var(--line-strong)_transparent]"
       >
         {error && (
           <Aviso tono="bad" titulo="No se pudo abrir el chat">
