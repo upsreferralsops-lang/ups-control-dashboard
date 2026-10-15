@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   confirmOpsTool,
   CoreApiError,
+  createOpsThread,
   deleteOpsThread,
   postOpsMessage,
   rejectOpsTool,
@@ -40,6 +41,16 @@ export async function enviarMensaje(threadId: string, formData: FormData): Promi
   }
   revalidatePath("/asistente");
   return { error: null };
+}
+
+/** Para el primer mensaje con archivo o nota de voz: el adjunto necesita un hilo. */
+export async function crearHiloVacio(): Promise<{ id: string | null; error: string | null }> {
+  try {
+    const hilo = await createOpsThread();
+    return { id: hilo.id, error: null };
+  } catch (error) {
+    return { id: null, error: mensaje(error, "No se pudo abrir el chat.") };
+  }
 }
 
 export async function borrarHilo(threadId: string): Promise<AsistenteState & { irAlInicio?: boolean }> {

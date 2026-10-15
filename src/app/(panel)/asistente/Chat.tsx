@@ -7,12 +7,13 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import type { OpsThread, OpsThreadDetail } from "@/lib/api";
-import { IconoBasura, IconoBuscar, IconoEnviar } from "@/lib/icons";
+import { IconoAdjuntar, IconoBasura, IconoBuscar, IconoCerrar, IconoEnviar, IconoMicrofono } from "@/lib/icons";
 import { Aviso } from "@/components/ui";
 import {
   borrarHilo,
   cancelarAccion,
   confirmarAccion,
+  crearHiloVacio,
   empezarConversacion,
   enviarMensaje,
 } from "./actions";
@@ -25,6 +26,10 @@ const SUGERENCIAS = [
   {
     etiqueta: "Créditos",
     texto: "¿Cómo están los créditos de mis bots?",
+  },
+  {
+    etiqueta: "Referir una lista",
+    texto: "Te paso una lista de candidatos para referir (adjunto el archivo)",
   },
   {
     etiqueta: "Buscar vacantes",
@@ -419,6 +424,16 @@ function Conversacion({
                       : "rounded-2xl rounded-bl-md border border-line bg-paper text-ink"
                   }`}
                 >
+                  {msg.adjunto && (
+                    <span className={`mb-1 flex items-center gap-1.5 text-xs ${propio ? "text-white/85" : "text-ink-soft"}`}>
+                      {msg.adjunto.tipo === "audio" ? (
+                        <IconoMicrofono className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <IconoAdjuntar className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      {msg.adjunto.nombre}
+                    </span>
+                  )}
                   <Mensaje texto={msg.text} propio={propio} />
                 </div>
                 {hora(msg.created_at) && (
@@ -468,11 +483,11 @@ function Bienvenida() {
       <div className="flex flex-col gap-2">
         <h3 className="text-[1.65rem] font-semibold tracking-tight text-ink">¿Qué necesitás hoy?</h3>
         <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-ink-soft">
-          Reportes, créditos, búsquedas de vacantes o cambios de ficha. Nada se escribe ni se avisa por
-          Telegram hasta que confirmás.
+          Reportes, búsquedas de vacantes, mejorar el bot o referir una lista. Podés adjuntar archivos
+          (Excel, Word, PDF, CSV, imágenes) o mandar una nota de voz. Nada se escribe hasta que confirmás.
         </p>
       </div>
-      <div className="grid w-full gap-2 sm:grid-cols-3">
+      <div className="grid w-full gap-2 sm:grid-cols-2">
         {SUGERENCIAS.map((item) => (
           <button
             key={item.etiqueta}
@@ -496,9 +511,50 @@ function ajustarAlto(area: HTMLTextAreaElement) {
   area.style.height = `${Math.min(area.scrollHeight, 160)}px`;
 }
 
+// El panel sube por el proxy de Next: Vercel corta el cuerpo en 4.5 MB.
+const TOPE_SUBIDA = 4 * 1024 * 1024;
+const FORMATOS = ".txt,.md,.csv,.tsv,.json,.xlsx,.docx,.pdf,image/*,audio/*";
+
+/** Sube un archivo o nota de voz al hilo. Devuelve el error, o null si salió. */
+async function subirAlAsistente(
+  threadId: string,
+  cuerpo: Blob,
+  tipo: string,
+  nombre: string,
+  { notaDeVoz = false, texto = "" }: { notaDeVoz?: boolean; texto?: string } = {},
+): Promise<string | null> {
+  if (cuerpo.size > TOPE_SUBIDA) return "El archivo supera los 4 MB que admite el panel.";
+  const q = new URLSearchParams({ nombre });
+  if (notaDeVoz) q.set("nota_de_voz", "true");
+  if (texto) q.set("texto", texto);
+  try {
+    const r = await fetch(`/api/asistente/${threadId}/adjuntos?${q}`, {
+      method: "POST",
+      headers: { "Content-Type": tipo || "application/octet-stream" },
+      body: cuerpo,
+    });
+    if (r.ok) return null;
+    const j = (await r.json().catch(() => null)) as { detail?: string } | null;
+    return typeof j?.detail === "string" ? j.detail : "No se pudo enviar el archivo.";
+  } catch {
+    return "No se pudo enviar el archivo. Revisá la conexión.";
+  }
+}
+
+function duracion(segundos: number) {
+  return `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
+}
+
+const BOTON_ICONO =
+  "mb-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-control text-ink-soft transition-colors duration-150 " +
+  "hover:bg-sunk hover:text-ink disabled:opacity-40";
+
 function Composer({ threadId }: { threadId: string | null }) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const archivoRef = useRef<HTMLInputElement>(null);
+  const descartarRef = useRef(false);
   // Los atajos de teclado solo se anuncian con mouse; en touch cortaban el placeholder.
   const conTeclado = useSyncExternalStore(
     () => () => {},
@@ -507,6 +563,9 @@ function Composer({ threadId }: { threadId: string | null }) {
   );
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [grabadora, setGrabadora] = useState<MediaRecorder | null>(null);
+  const [segundos, setSegundos] = useState(0);
 
   useEffect(() => {
     const alElegir = (e: Event) => {
@@ -520,11 +579,58 @@ function Composer({ threadId }: { threadId: string | null }) {
     return () => document.removeEventListener("asistente:sugerencia", alElegir);
   }, []);
 
+  // Contador mientras se graba.
+  useEffect(() => {
+    if (!grabadora) return;
+    const inicio = Date.now();
+    const id = window.setInterval(() => setSegundos(Math.floor((Date.now() - inicio) / 1000)), 500);
+    return () => window.clearInterval(id);
+  }, [grabadora]);
+
+  /** El adjunto necesita un hilo: si es el primer mensaje, se crea antes. */
+  async function enviarAdjunto(
+    cuerpo: Blob,
+    tipo: string,
+    nombre: string,
+    opciones: { notaDeVoz?: boolean; texto?: string },
+  ): Promise<boolean> {
+    let id = threadId;
+    if (!id) {
+      const hilo = await crearHiloVacio();
+      if (!hilo.id) {
+        setError(hilo.error);
+        return false;
+      }
+      id = hilo.id;
+    }
+    const fallo = await subirAlAsistente(id, cuerpo, tipo, nombre, opciones);
+    if (fallo) {
+      setError(fallo);
+      return false;
+    }
+    if (threadId) router.refresh();
+    else router.push(`/asistente?hilo=${id}`);
+    return true;
+  }
+
   async function action(formData: FormData) {
     if (enviando) return;
     setEnviando(true);
     setError(null);
     try {
+      const texto = String(formData.get("text") || "").trim();
+      if (archivo) {
+        if (await enviarAdjunto(archivo, archivo.type, archivo.name, { texto })) {
+          setArchivo(null);
+          formRef.current?.reset();
+          if (areaRef.current) areaRef.current.style.height = "auto";
+        }
+        return;
+      }
+      if (!texto) {
+        setError("Escribí un mensaje, adjuntá un archivo o grabá una nota de voz.");
+        return;
+      }
       const estado = threadId
         ? await enviarMensaje(threadId, formData)
         : await empezarConversacion(formData);
@@ -538,47 +644,168 @@ function Composer({ threadId }: { threadId: string | null }) {
     }
   }
 
+  async function grabar() {
+    setError(null);
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Este navegador no permite grabar audio.");
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setError("No hay permiso para usar el micrófono.");
+      return;
+    }
+    // Chrome/Android graban WebM/Opus; Safari, MP4. El core lo transcribe igual (Whisper).
+    const tipo = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((t) =>
+      MediaRecorder.isTypeSupported(t),
+    );
+    const rec = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined);
+    const partes: Blob[] = [];
+    rec.ondataavailable = (e) => {
+      if (e.data.size) partes.push(e.data);
+    };
+    rec.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      setGrabadora(null);
+      if (descartarRef.current || partes.length === 0) return;
+      const base = rec.mimeType.split(";")[0] || "audio/webm";
+      setEnviando(true);
+      void enviarAdjunto(
+        new Blob(partes, { type: rec.mimeType }),
+        base,
+        base.includes("mp4") ? "nota.m4a" : "nota.webm",
+        { notaDeVoz: true },
+      ).finally(() => setEnviando(false));
+    };
+    descartarRef.current = false;
+    setSegundos(0);
+    rec.start();
+    setGrabadora(rec);
+  }
+
+  function detener(descartar: boolean) {
+    descartarRef.current = descartar;
+    grabadora?.stop();
+  }
+
   return (
-    <form ref={formRef} action={action} className="border-t border-line bg-surface px-4 py-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-6">
-      <div className="flex items-end gap-2 rounded-panel border border-line-strong bg-paper p-2 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.6)] transition-[border-color,box-shadow] duration-150 focus-within:border-signal focus-within:ring-2 focus-within:ring-signal/25">
-        <label className="sr-only" htmlFor="mensaje-asistente">
-          Mensaje
-        </label>
-        <textarea
-          ref={areaRef}
-          id="mensaje-asistente"
-          name="text"
-          required
-          rows={1}
-          disabled={enviando}
-          placeholder={
-            (threadId ? "Seguí la conversación…" : "Escribí tu pedido…") +
-            (conTeclado ? "  Ctrl+Enter envía · Shift+Enter baja de línea" : "")
-          }
-          onInput={(event) => ajustarAlto(event.currentTarget)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return;
-            if (event.ctrlKey || event.metaKey) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-              return;
+    <form
+      ref={formRef}
+      action={action}
+      className="border-t border-line bg-surface px-4 py-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-6"
+    >
+      {archivo && (
+        <div className="mb-2 flex w-fit items-center gap-2 rounded-control border border-line bg-sunk px-2.5 py-1.5 text-xs text-ink-soft">
+          <IconoAdjuntar className="h-3.5 w-3.5 shrink-0" />
+          <span className="max-w-56 truncate font-medium text-ink">{archivo.name}</span>
+          <span className="tabular-nums">{(archivo.size / 1024 / 1024).toFixed(1)} MB</span>
+          <button
+            type="button"
+            onClick={() => setArchivo(null)}
+            aria-label="Quitar archivo"
+            className="grid h-6 w-6 place-items-center rounded-control hover:bg-surface hover:text-ink"
+          >
+            <IconoCerrar className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {grabadora ? (
+        <div className="flex min-h-14 items-center gap-2 rounded-panel border border-line-strong bg-paper p-2">
+          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-bad" aria-hidden />
+          <span className="flex-1 text-sm tabular-nums text-ink" aria-live="polite">
+            Grabando {duracion(segundos)}
+          </span>
+          <button
+            type="button"
+            onClick={() => detener(true)}
+            className="rounded-control px-3 py-2 text-sm text-ink-soft hover:bg-sunk"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => detener(false)}
+            className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-ink"
+          >
+            <IconoEnviar className="h-4 w-4" />
+            Enviar nota
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-end gap-1 rounded-panel border border-line-strong bg-paper p-2 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.6)] transition-[border-color,box-shadow] duration-150 focus-within:border-signal focus-within:ring-2 focus-within:ring-signal/25">
+          <input
+            ref={archivoRef}
+            type="file"
+            hidden
+            accept={FORMATOS}
+            onChange={(e) => {
+              setArchivo(e.target.files?.[0] ?? null);
+              setError(null);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => archivoRef.current?.click()}
+            disabled={enviando}
+            aria-label="Adjuntar archivo"
+            title="Adjuntar archivo (txt, csv, Excel, Word, PDF, imagen)"
+            className={BOTON_ICONO}
+          >
+            <IconoAdjuntar className="h-5 w-5" />
+          </button>
+          <label className="sr-only" htmlFor="mensaje-asistente">
+            Mensaje
+          </label>
+          <textarea
+            ref={areaRef}
+            id="mensaje-asistente"
+            name="text"
+            rows={1}
+            disabled={enviando}
+            placeholder={
+              archivo
+                ? "Decime qué hago con el archivo (opcional)…"
+                : (threadId ? "Seguí la conversación…" : "Escribí tu pedido…") +
+                  (conTeclado ? "  Ctrl+Enter envía · Shift+Enter baja de línea" : "")
             }
-            // Enter solo no hace nada. Solo Shift+Enter baja de línea.
-            if (!event.shiftKey) {
-              event.preventDefault();
-            }
-          }}
-          className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={enviando}
-          aria-label={enviando ? "Enviando" : "Enviar mensaje"}
-          className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-colors duration-150 hover:bg-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 disabled:opacity-60"
-        >
-          <IconoEnviar className="h-4 w-4" />
-        </button>
-      </div>
+            onInput={(event) => ajustarAlto(event.currentTarget)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+                return;
+              }
+              // Enter solo no hace nada. Solo Shift+Enter baja de línea.
+              if (!event.shiftKey) {
+                event.preventDefault();
+              }
+            }}
+            className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={() => void grabar()}
+            disabled={enviando}
+            aria-label="Grabar nota de voz"
+            title="Grabar nota de voz"
+            className={BOTON_ICONO}
+          >
+            <IconoMicrofono className="h-5 w-5" />
+          </button>
+          <button
+            type="submit"
+            disabled={enviando}
+            aria-label={enviando ? "Enviando" : "Enviar mensaje"}
+            className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-colors duration-150 hover:bg-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 disabled:opacity-60"
+          >
+            <IconoEnviar className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {error && (
         <div className="mt-3">
           <Aviso tono="bad" titulo="No se envió">

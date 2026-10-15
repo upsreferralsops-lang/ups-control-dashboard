@@ -674,6 +674,8 @@ export type OpsMessage = {
   author: "user" | "agent";
   text: string;
   created_at: string | null;
+  /** Archivo o nota de voz que mandó el usuario (el asistente lo recibe ya leído). */
+  adjunto?: { nombre: string; tipo: string | null } | null;
 };
 
 export type OpsToolRun = {
