@@ -274,7 +274,7 @@ function Tabla({
       <div className="rounded-panel border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
         <p className="text-sm font-medium">Ningún candidato coincide</p>
         <p className="mt-1 text-sm text-ink-soft">
-          Probá con menos filtros, o buscá por correo o teléfono.
+          Prueba con menos filtros, o busca por correo o teléfono.
         </p>
       </div>
     );
@@ -428,8 +428,8 @@ export default async function Panel({
       </div>
 
       {sinBots && (
-        <Aviso tono="warn" titulo="Todavía no tenés bots asignados">
-          Por eso no ves candidatos. Pedile a un administrador que te asigne al menos uno.
+        <Aviso tono="warn" titulo="Todavía no tienes bots asignados">
+          Por eso no ves candidatos. Pídele a un administrador que te asigne al menos uno.
         </Aviso>
       )}
 

@@ -122,7 +122,7 @@ export function PieSesion({
 
       {abierto && mostrarSwitch && !vista && (
         <div className="absolute bottom-full left-0 right-0 z-20 mb-2 rounded-panel border border-line bg-surface px-3 py-2 text-xs text-ink-soft shadow-lg">
-          No se pudo cargar la lista de usuarios. Verificá que el core esté actualizado.
+          No se pudo cargar la lista de usuarios. Verifica que el core esté actualizado.
         </div>
       )}
 

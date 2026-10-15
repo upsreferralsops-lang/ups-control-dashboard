@@ -19,7 +19,7 @@ const CONTENIDO: Record<
     titulo: "Volvemos enseguida",
     mensaje:
       "La consola no está disponible por unos minutos. Estamos trabajando para restablecer el acceso.",
-    consejo: "Podés intentar de nuevo en un momento o volver más tarde con tu mismo usuario.",
+    consejo: "Puedes intentar de nuevo en un momento o volver más tarde con tu mismo usuario.",
     tono: "bad",
     Icono: IconoConsulta,
   },
@@ -27,14 +27,14 @@ const CONTENIDO: Record<
     titulo: "Estamos mejorando la plataforma",
     mensaje:
       "Hay un mantenimiento programado. Tu cuenta sigue activa; solo pausamos el acceso mientras terminamos.",
-    consejo: "Gracias por tu paciencia. En cuanto abramos de nuevo, podés entrar como siempre.",
+    consejo: "Gracias por tu paciencia. En cuanto abramos de nuevo, puedes entrar como siempre.",
     tono: "warn",
     Icono: IconoReloj,
   },
   error: {
     titulo: "No pudimos cargar esta página",
     mensaje: "Ocurrió un inconveniente al mostrar la consola. No es necesario que hagas nada técnico.",
-    consejo: "Probá otra vez. Si sigue igual, avisá a tu contacto en operaciones.",
+    consejo: "Prueba otra vez. Si sigue igual, avisa a tu contacto en operaciones.",
     tono: "bad",
     Icono: IconoConsulta,
   },
@@ -136,7 +136,7 @@ export function EstadoServicioScreen({
           </div>
 
           <p className="mt-10 border-t border-line pt-5 text-center text-xs text-ink-soft">
-            ¿Necesitás ayuda? Escribí a tu supervisor o al equipo de soporte interno.
+            ¿Necesitas ayuda? Escribe a tu supervisor o al equipo de soporte interno.
           </p>
         </div>
       </main>

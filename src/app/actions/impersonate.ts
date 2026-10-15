@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { CoreApiError, impersonateUser, SESSION_COOKIE, stopImpersonation } from "@/lib/api";
+import { CoreApiError, impersonateUser, SESION_SEGUNDOS, SESSION_COOKIE, stopImpersonation } from "@/lib/api";
 
 async function guardarTokenSesion(token: string) {
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -10,7 +10,7 @@ async function guardarTokenSesion(token: string) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12,
+    maxAge: SESION_SEGUNDOS,
   });
 }
 

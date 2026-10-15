@@ -475,7 +475,7 @@ export function ConversacionPanel({
       {marcando && !seleccionado && (
         <div className={`flex shrink-0 items-center gap-2 border-t border-line pt-3 ${FIJO_ABAJO}`}>
           <p className="min-w-0 flex-1 rounded-control border border-warn-border bg-signal-wash px-3 py-2 text-xs text-signal-ink">
-            Tocá un mensaje (candidato o bot) para anclar la corrección. Aplica solo al bot de{" "}
+            Toca un mensaje (candidato o bot) para anclar la corrección. Aplica solo al bot de{" "}
             <strong>{tenantName}</strong>.
           </p>
           <Boton type="button" className="shrink-0" onClick={cancelarMarcado}>
@@ -559,7 +559,7 @@ export function ConversacionPanel({
         <div className={`relative flex min-h-12 shrink-0 items-center border-t border-line pt-3 ${FIJO_ABAJO}`}>
           <p className="text-sm font-medium tabular-nums text-ink" aria-live="polite">
             {!buscando
-              ? "Escribí arriba para buscar"
+              ? "Escribe arriba para buscar"
               : totalCoincidencias === 0
                 ? "Sin resultados"
                 : `${activo + 1} de ${totalCoincidencias}`}
@@ -646,7 +646,7 @@ async function subirAdjunto(
     const j = (await r.json().catch(() => null)) as { detail?: string } | null;
     return typeof j?.detail === "string" ? j.detail : "No se pudo enviar el archivo.";
   } catch {
-    return "No se pudo enviar el archivo. Revisá la conexión.";
+    return "No se pudo enviar el archivo. Revisa la conexión.";
   }
 }
 
@@ -838,7 +838,7 @@ function EscribirAlCandidato({
             value={texto}
             disabled={enviando}
             maxLength={archivo ? 1024 : 4000}
-            placeholder={archivo ? "Agregá un texto (opcional)…" : botPausado ? "Escribile al candidato…" : "Escribile (el bot se pausa al enviar)…"}
+            placeholder={archivo ? "Agrega un texto (opcional)…" : botPausado ? "Escríbele al candidato…" : "Escríbele (el bot se pausa al enviar)…"}
             onChange={(e) => {
               setTexto(e.target.value);
               ajustarAlto(e.currentTarget);

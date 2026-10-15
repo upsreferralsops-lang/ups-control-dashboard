@@ -20,7 +20,7 @@ function mensaje(error: unknown, fallback: string): string {
 
 export async function empezarConversacion(formData: FormData): Promise<AsistenteState> {
   const text = String(formData.get("text") || "").trim();
-  if (!text) return { error: "Escribí un mensaje antes de enviarlo." };
+  if (!text) return { error: "Escribe un mensaje antes de enviarlo." };
   let hiloId: string;
   try {
     const hilo = await startOpsThread(text);
@@ -33,7 +33,7 @@ export async function empezarConversacion(formData: FormData): Promise<Asistente
 
 export async function enviarMensaje(threadId: string, formData: FormData): Promise<AsistenteState> {
   const text = String(formData.get("text") || "").trim();
-  if (!text) return { error: "Escribí un mensaje." };
+  if (!text) return { error: "Escribe un mensaje." };
   try {
     await postOpsMessage(threadId, text);
   } catch (error) {

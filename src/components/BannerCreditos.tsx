@@ -30,7 +30,7 @@ export function BannerCreditos({ alertas }: { alertas: TenantCredits[] }) {
           <li key={alerta.tenant_id}>
             <strong className="text-ink">{alerta.name || alerta.slug}</strong>
             {": "}
-            {monto(alerta)} restantes (aviso bajo US$ {alerta.threshold_usd}). Recargá
+            {monto(alerta)} restantes (aviso bajo US$ {alerta.threshold_usd}). Recarga
             la cuenta de OpenRouter de ese cliente para que el bot no deje de
             responder.
           </li>

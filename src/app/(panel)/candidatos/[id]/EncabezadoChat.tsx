@@ -122,7 +122,7 @@ export function EncabezadoChat({
               className={`flex items-center gap-1.5 text-xs ${pausado ? "text-warn-ink" : "text-ok-ink"}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${pausado ? "bg-warn" : "bg-ok"}`} aria-hidden />
-              {pausado ? "Bot pausado · lo atendés vos" : "Bot activo"}
+              {pausado ? "Bot pausado · lo atiendes tú" : "Bot activo"}
             </span>
           </span>
         </Link>

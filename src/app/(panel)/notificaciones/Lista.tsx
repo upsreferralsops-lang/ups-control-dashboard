@@ -50,7 +50,7 @@ export function ListaNotificaciones({ items, noLeidas }: { items: Notificacion[]
       {error && <p className="text-sm text-bad-ink" role="alert">{error}</p>}
       {items.length === 0 ? (
         <p className="rounded-panel border border-line bg-surface p-6 text-sm text-ink-soft">
-          Todavía no hay notificaciones. Acá vas a ver saldo bajo, recargas, referidos exitosos y
+          Todavía no hay notificaciones. Aquí vas a ver saldo bajo, recargas, referidos exitosos y
           candidatos que necesitan que les escriba una persona.
         </p>
       ) : (

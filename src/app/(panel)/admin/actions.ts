@@ -27,7 +27,7 @@ export async function crearUsuario(_prev: AdminState, formData: FormData): Promi
   // Un cliente sin bots entra al panel y no ve nada. Es un error de carga, no
   // un estado util, asi que se corta aca. Un admin ve todo y no necesita.
   if (role === "client" && tenantIds.length === 0) {
-    return { error: "Elegí al menos un bot: sin bots el cliente no ve nada.", ok: null };
+    return { error: "Elige al menos un bot: sin bots el cliente no ve nada.", ok: null };
   }
 
   try {

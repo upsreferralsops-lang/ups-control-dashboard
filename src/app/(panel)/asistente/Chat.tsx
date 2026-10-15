@@ -24,8 +24,16 @@ const SUGERENCIAS = [
     texto: "Dame el reporte de los últimos 30 días",
   },
   {
-    etiqueta: "Créditos",
-    texto: "¿Cómo están los créditos de mis bots?",
+    etiqueta: "Corregir con un informe",
+    texto: "Te paso un informe con errores del bot para que los corrijas (adjunto el archivo)",
+  },
+  {
+    etiqueta: "Revisar los chats de hoy",
+    texto: "Revisa los chats de hoy y dime qué hizo mal el bot",
+  },
+  {
+    etiqueta: "Probar el bot",
+    texto: "Quiero probar el bot como si fuera un candidato",
   },
   {
     etiqueta: "Referir una lista",
@@ -261,7 +269,7 @@ function ListaHilos({
           <li className="px-3 py-8 text-center text-sm text-ink-soft">
             {filtro.trim()
               ? "Ningún chat coincide con esa búsqueda."
-              : "Escribí el primer mensaje a la derecha. El chat se crea solo entonces."}
+              : "Escribe el primer mensaje a la derecha. El chat se crea solo entonces."}
           </li>
         )}
         {visibles.map((item) => {
@@ -452,9 +460,9 @@ function Conversacion({
           role="region"
           aria-label="Acción pendiente de confirmación"
         >
-          <p className="text-sm font-semibold text-warn-ink">Confirmá antes de continuar</p>
+          <p className="text-sm font-semibold text-warn-ink">Confirma antes de continuar</p>
           <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-ink">
-            {run.arguments._texto || "Revisá la acción antes de seguir."}
+            {run.arguments._texto || "Revisa la acción antes de seguir."}
           </p>
           <BotonesConfirmacion threadId={detalle.id} runId={run.id} />
         </div>
@@ -481,9 +489,9 @@ function Bienvenida() {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <h3 className="text-[1.65rem] font-semibold tracking-tight text-ink">¿Qué necesitás hoy?</h3>
+        <h3 className="text-[1.65rem] font-semibold tracking-tight text-ink">¿Qué necesitas hoy?</h3>
         <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-ink-soft">
-          Reportes, búsquedas de vacantes, mejorar el bot o referir una lista. Podés adjuntar archivos
+          Reportes, búsquedas de vacantes, mejorar el bot o referir una lista. Puedes adjuntar archivos
           (Excel, Word, PDF, CSV, imágenes) o mandar una nota de voz. Nada se escribe hasta que confirmás.
         </p>
       </div>
@@ -537,7 +545,7 @@ async function subirAlAsistente(
     const j = (await r.json().catch(() => null)) as { detail?: string } | null;
     return typeof j?.detail === "string" ? j.detail : "No se pudo enviar el archivo.";
   } catch {
-    return "No se pudo enviar el archivo. Revisá la conexión.";
+    return "No se pudo enviar el archivo. Revisa la conexión.";
   }
 }
 
@@ -628,7 +636,7 @@ function Composer({ threadId }: { threadId: string | null }) {
         return;
       }
       if (!texto) {
-        setError("Escribí un mensaje, adjuntá un archivo o grabá una nota de voz.");
+        setError("Escribe un mensaje, adjunta un archivo o graba una nota de voz.");
         return;
       }
       const estado = threadId
@@ -767,8 +775,8 @@ function Composer({ threadId }: { threadId: string | null }) {
             disabled={enviando}
             placeholder={
               archivo
-                ? "Decime qué hago con el archivo (opcional)…"
-                : (threadId ? "Seguí la conversación…" : "Escribí tu pedido…") +
+                ? "Dime qué hago con el archivo (opcional)…"
+                : (threadId ? "Sigue la conversación…" : "Escribe tu pedido…") +
                   (conTeclado ? "  Ctrl+Enter envía · Shift+Enter baja de línea" : "")
             }
             onInput={(event) => ajustarAlto(event.currentTarget)}

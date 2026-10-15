@@ -177,14 +177,14 @@ export default async function ReportesPage({
           <p className="text-sm text-ink-soft">
             {esAdmin
               ? "Rendimiento de todos los clientes, o de un bot puntual."
-              : "Rendimiento de los bots que tenés asignados."}
+              : "Rendimiento de los bots que tienes asignados."}
           </p>
         </div>
       </header>
 
       {sinBots && (
-        <Aviso tono="warn" titulo="Todavía no tenés bots asignados">
-          Por eso no ves métricas. Pedile a un administrador que te asigne al menos uno.
+        <Aviso tono="warn" titulo="Todavía no tienes bots asignados">
+          Por eso no ves métricas. Pídele a un administrador que te asigne al menos uno.
         </Aviso>
       )}
 

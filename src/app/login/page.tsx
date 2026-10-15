@@ -115,7 +115,7 @@ export default async function LoginPage({
           {vencida && (
             <div className="mt-6">
               <Aviso tono="warn" titulo="Sesión vencida">
-                Tu sesión venció. Volvé a entrar.
+                Tu sesión venció. Vuelve a entrar.
               </Aviso>
             </div>
           )}

@@ -42,16 +42,16 @@ async function suscripcionActual() {
 }
 
 const TEXTO: Record<Exclude<Estado, "cargando">, string> = {
-  sin_soporte: "Este navegador no permite notificaciones push. Probá con Chrome o con la app instalada.",
+  sin_soporte: "Este navegador no permite notificaciones push. Prueba con Chrome o con la app instalada.",
   ios_instalar:
-    "En iPhone los avisos llegan solo con la app instalada: tocá Compartir y después «Agregar a inicio». " +
-    "Abrila desde ese ícono y activá las notificaciones acá.",
+    "En iPhone los avisos llegan solo con la app instalada: toca Compartir y después «Agregar a inicio». " +
+    "Ábrela desde ese ícono y activa las notificaciones aquí.",
   bloqueado:
     "Las notificaciones están bloqueadas para este sitio. Habilitalas desde la configuración del navegador " +
-    "(el candado junto a la dirección) y volvé a intentar.",
+    "(el candado junto a la dirección) y vuelve a intentar.",
   sin_config: "Las notificaciones push todavía no están configuradas en el servidor.",
   inactivo:
-    "Recibí en este dispositivo, aun con la app cerrada, cuando un candidato pide una persona o te escribe con el bot pausado.",
+    "Recibe en este dispositivo, aun con la app cerrada, cuando un candidato pide una persona o te escribe con el bot pausado.",
   activo: "Este dispositivo recibe los avisos aunque la app esté cerrada.",
 };
 
@@ -106,7 +106,7 @@ export function ActivarNotificaciones() {
       }
       setEstado("activo");
     } catch {
-      setError("No se pudo activar. Reintentá en unos segundos.");
+      setError("No se pudo activar. Reintenta en unos segundos.");
     } finally {
       setOcupado(false);
     }
@@ -123,7 +123,7 @@ export function ActivarNotificaciones() {
       }
       setEstado("inactivo");
     } catch {
-      setError("No se pudo desactivar. Reintentá en unos segundos.");
+      setError("No se pudo desactivar. Reintenta en unos segundos.");
     } finally {
       setOcupado(false);
     }

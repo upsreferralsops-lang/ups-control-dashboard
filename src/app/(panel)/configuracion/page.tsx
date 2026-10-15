@@ -44,8 +44,8 @@ export default async function ConfiguracionPage({
     return (
       <div data-fill-panel className="flex flex-col gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-brand">Configuración</h1>
-        <Aviso tono="warn" titulo="Todavía no tenés bots">
-          Cuando te asignen un cliente vas a poder crear reglas y probarlas acá.
+        <Aviso tono="warn" titulo="Todavía no tienes bots">
+          Cuando te asignen un cliente vas a poder crear reglas y probarlas aquí.
         </Aviso>
       </div>
     );
@@ -70,8 +70,8 @@ export default async function ConfiguracionPage({
     return (
       <div data-fill-panel className="flex flex-col gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-brand">Configuración</h1>
-        <Aviso tono="warn" titulo="Todavía no tenés bots">
-          Cuando te asignen un cliente vas a poder crear reglas y probarlas acá.
+        <Aviso tono="warn" titulo="Todavía no tienes bots">
+          Cuando te asignen un cliente vas a poder crear reglas y probarlas aquí.
         </Aviso>
       </div>
     );
@@ -83,8 +83,8 @@ export default async function ConfiguracionPage({
     return (
       <div data-fill-panel className="flex flex-col gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-brand">Configuración</h1>
-        <Aviso tono="warn" titulo="Todavía no tenés bots">
-          Cuando te asignen un cliente vas a poder crear reglas y probarlas acá.
+        <Aviso tono="warn" titulo="Todavía no tienes bots">
+          Cuando te asignen un cliente vas a poder crear reglas y probarlas aquí.
         </Aviso>
       </div>
     );

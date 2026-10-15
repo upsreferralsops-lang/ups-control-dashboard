@@ -49,7 +49,7 @@ export function Bloque({
   titulo?: string;
   extra?: ReactNode;
   className?: string;
-  /** Clases del cuerpo; usá `p-0` para tablas a sangre. */
+  /** Clases del cuerpo; usa `p-0` para tablas a sangre. */
   cuerpoClassName?: string;
   children: ReactNode;
 }) {

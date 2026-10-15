@@ -57,7 +57,7 @@ export async function enviarMensaje(
   texto: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const limpio = texto.trim();
-  if (!limpio) return { ok: false, error: "Escribí un mensaje." };
+  if (!limpio) return { ok: false, error: "Escribe un mensaje." };
   try {
     await sendOperatorMessage(candidateId, limpio);
     revalidarCandidato(candidateId);

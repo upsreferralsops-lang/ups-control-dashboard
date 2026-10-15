@@ -64,7 +64,7 @@ export function NuevoUsuario({ bots }: { bots: AdminTenant[] }) {
             aria-describedby="nu-password-ayuda"
           />
           <p id="nu-password-ayuda" className="text-xs text-ink-faint">
-            Se la tenés que pasar vos: el panel no la muestra de nuevo.
+            Se la tienes que pasar tú: el panel no la muestra de nuevo.
           </p>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -121,7 +121,7 @@ export function NuevoUsuario({ bots }: { bots: AdminTenant[] }) {
 
           {bots.length === 0 ? (
             <p className="text-sm text-ink-soft">
-              No hay bots creados todavía. Creá uno antes de dar de alta a un cliente.
+              No hay bots creados todavía. Crea uno antes de dar de alta a un cliente.
             </p>
           ) : (
             <>

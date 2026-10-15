@@ -45,7 +45,7 @@ export const REFERRAL_STATUS = {
   },
   search_failed: {
     label: "Búsqueda falló",
-    help: "No se pudo consultar las vacantes, así que no sabemos si hay cupos. Revisá la sesión del portal y reintentá.",
+    help: "No se pudo consultar las vacantes, así que no sabemos si hay cupos. Revisa la sesión del portal y reintenta.",
     badge: "border-bad-border bg-bad-wash text-bad-ink",
     Icono: IconoAlerta,
   },

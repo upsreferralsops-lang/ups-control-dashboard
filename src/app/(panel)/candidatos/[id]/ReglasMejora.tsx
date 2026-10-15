@@ -42,7 +42,7 @@ export function ReglasMejora({
 
       {casos.length === 0 ? (
         <p className="text-sm text-ink-soft">
-          Todavía no hay correcciones de este chat. En la conversación usá «Marcar corrección».
+          Todavía no hay correcciones de este chat. En la conversación usa «Marcar corrección».
         </p>
       ) : (
         <ul className="flex max-h-64 flex-col gap-3 overflow-y-auto pr-1">

@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 /**
  * Proxy SSE al core con el JWT de la cookie httpOnly. EventSource en el browser
- * no puede mandar Authorization; acá el servidor reenvía el stream.
+ * no puede mandar Authorization; aquí el servidor reenvía el stream.
  */
 export async function GET() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;

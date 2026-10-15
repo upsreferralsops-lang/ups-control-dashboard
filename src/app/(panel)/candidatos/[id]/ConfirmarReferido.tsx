@@ -28,7 +28,7 @@ export function ConfirmarReferido({
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm text-ink-soft">
-          Marcá el referido solo cuando ya lo verificaste en Internal Mobility.
+          Marca el referido solo cuando ya lo verificaste en Internal Mobility.
         </p>
         <Boton variante="primario" onClick={() => setPreguntando(true)}>
           Marcar como referido
@@ -42,7 +42,7 @@ export function ConfirmarReferido({
     <div className="flex flex-col gap-3">
       <div className="rounded-control border border-warn-border bg-warn-wash px-3 py-2.5">
         <p className="text-sm text-warn-ink">
-          Confirmá solo si ya viste el <strong>Congratulations</strong> en Internal Mobility. Esto
+          Confirma solo si ya viste el <strong>Congratulations</strong> en Internal Mobility. Esto
           marca el caso como referido en la consola.
         </p>
       </div>
@@ -56,7 +56,7 @@ export function ConfirmarReferido({
               try {
                 await confirmarReferido(candidateId);
               } catch {
-                setError("No se pudo confirmar. Revisá que el core esté corriendo.");
+                setError("No se pudo confirmar. Revisa que el core esté corriendo.");
               }
             })
           }

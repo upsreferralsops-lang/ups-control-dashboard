@@ -14,6 +14,8 @@ function coreBaseUrl(): string {
 const BASE_URL = coreBaseUrl();
 
 export const SESSION_COOKIE = "ups_session";
+/** Lo que dura la sesion del panel: igual que el token del core (TOKEN_TTL_HOURS, 24 h). */
+export const SESION_SEGUNDOS = 60 * 60 * 24;
 
 export type Role = "admin" | "client";
 
@@ -226,7 +228,7 @@ export type PlaygroundTurn = {
   reply_text: string;
   message_id: number;
   tested_case_ids: string[];
-  /** Lo que el bot real haría y acá no (referir, escalar, mandar la imagen). */
+  /** Lo que el bot real haría y aquí no (referir, escalar, mandar la imagen). */
   aviso: string | null;
   messages: PlaygroundMessage[];
 };

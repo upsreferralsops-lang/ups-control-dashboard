@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { changePassword, CoreApiError, SESSION_COOKIE } from "@/lib/api";
+import { changePassword, CoreApiError, SESION_SEGUNDOS, SESSION_COOKIE } from "@/lib/api";
 
 export type CambiarContrasenaState = { error: string | null };
 
@@ -28,7 +28,7 @@ export async function cambiarContrasena(
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 12,
+      maxAge: SESION_SEGUNDOS,
     });
   } catch (error) {
     if (error instanceof CoreApiError) return { error: error.message };

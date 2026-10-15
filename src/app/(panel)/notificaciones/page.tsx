@@ -27,7 +27,7 @@ export default async function NotificacionesPage() {
         <ListaNotificaciones items={datos.items} noLeidas={datos.unread} />
       ) : (
         <Aviso tono="bad" titulo="No se pudieron cargar">
-          Reintentá en unos segundos.
+          Reintenta en unos segundos.
         </Aviso>
       )}
     </div>

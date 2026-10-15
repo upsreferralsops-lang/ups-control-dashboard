@@ -135,7 +135,7 @@ export function ImportarConocimiento({
           <>
             <p className="text-xs text-ink-soft">
               {origen === "ia"
-                ? "La IA ordenó el archivo en preguntas y respuestas. Revisalas: sacá las que no sirvan."
+                ? "La IA ordenó el archivo en preguntas y respuestas. Revísalas: saca las que no sirvan."
                 : "Leí el archivo tal cual."}{" "}
               {incluidas.length} de {filas.length} seleccionadas.
             </p>

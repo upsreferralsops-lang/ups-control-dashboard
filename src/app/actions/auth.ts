@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { CoreApiError, login, SESSION_COOKIE } from "@/lib/api";
+import { CoreApiError, login, SESION_SEGUNDOS, SESSION_COOKIE } from "@/lib/api";
 
 export type LoginState = { error: string | null };
 
@@ -12,7 +12,6 @@ export async function iniciarSesion(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const recordar = formData.get("recordar") != null;
 
   if (!email || !password) {
     return { error: "Completa el correo y la contrasena." };
@@ -32,17 +31,15 @@ export async function iniciarSesion(
   // httpOnly: el token no queda accesible desde JavaScript del navegador,
   // asi un XSS no puede robar la sesion.
   //
-  // "Recordar en esta estacion": sin tildar, la cookie muere al cerrar el
-  // navegador; tildado dura lo mismo que el token del core (12 h). En una
-  // estacion compartida esa es la diferencia entre dejar el turno abierto
-  // para el siguiente o no. Mas de 12 h no tiene sentido: el JWT vence igual
-  // y la sesion se veria "iniciada" hasta el primer 401.
+  // Persistente y del mismo largo que el token del core (24 h): sin maxAge la
+  // cookie moria al cerrar el navegador, y en el celular eso es cada vez que se
+  // cierra la app (Ricardo, 13/10). Mas no tiene sentido: el JWT vence igual.
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    ...(recordar ? { maxAge: 60 * 60 * 12 } : {}),
+    maxAge: SESION_SEGUNDOS,
   });
 
   redirect(mustChange ? "/cambiar-contrasena" : "/");

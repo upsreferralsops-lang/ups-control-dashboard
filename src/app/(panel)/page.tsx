@@ -396,8 +396,8 @@ export default async function Home({
       </div>
 
       {sinBots && (
-        <Aviso tono="warn" titulo="Todavía no tenés bots asignados">
-          Por eso no ves candidatos. Pedile a un administrador que te asigne al menos uno.
+        <Aviso tono="warn" titulo="Todavía no tienes bots asignados">
+          Por eso no ves candidatos. Pídele a un administrador que te asigne al menos uno.
         </Aviso>
       )}
 
@@ -457,7 +457,7 @@ export default async function Home({
 
         {filas.length === 0 ? (
           <p className="px-6 py-8 text-sm text-ink-soft">
-            {esAdmin ? "Todavía no hay clientes creados." : "Todavía no tenés bots asignados."}
+            {esAdmin ? "Todavía no hay clientes creados." : "Todavía no tienes bots asignados."}
           </p>
         ) : (
           <div className="divide-y divide-line/40">

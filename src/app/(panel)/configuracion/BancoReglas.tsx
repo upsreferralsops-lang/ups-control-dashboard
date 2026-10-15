@@ -313,7 +313,7 @@ export function BancoReglas({
                 </>
               ) : (
                 <p className="text-sm text-ink-soft">
-                  Elegí una corrección de la lista. Se crean desde la ficha, no desde acá.
+                  Elige una corrección de la lista. Se crean desde la ficha, no desde aquí.
                 </p>
               )}
             </div>
@@ -368,13 +368,13 @@ export function BancoReglas({
                 onChange={(e) => setGuia(e.target.value)}
                 required
                 minLength={8}
-                placeholder="Describí cómo debe actuar el bot en una o dos frases."
+                placeholder="Describe cómo debe actuar el bot en una o dos frases."
                 readOnly={soloLectura}
               />
             </label>
             {soloLectura ? (
               <p className="text-xs text-ink-soft">
-                Réplica en solo lectura. Se edita desde el bot donde se creó; acá
+                Réplica en solo lectura. Se edita desde el bot donde se creó; aquí
                 no se cambia.
               </p>
             ) : esAdmin ? (
@@ -396,7 +396,7 @@ export function BancoReglas({
             ) : null}
             {esAdmin && !soloLectura && !esGlobal && !actual && bots.length > 1 ? (
               <fieldset className="flex flex-col gap-1 text-sm">
-                <legend className="mb-1 text-xs font-medium text-ink-soft">O elegí en qué bots se crea</legend>
+                <legend className="mb-1 text-xs font-medium text-ink-soft">O elige en qué bots se crea</legend>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   {bots.map((b) => (
                     <label key={b.id} className="flex items-center gap-2">
@@ -424,7 +424,7 @@ export function BancoReglas({
 
             {!soloLectura && !actual?.published && actual && !actual.tested_in_playground_at ? (
               <p className="text-xs text-ink-soft">
-                Probá esta regla en el playground para poder habilitarla.{" "}
+                Prueba esta regla en el playground para poder habilitarla.{" "}
                 <button
                   type="button"
                   onClick={() => setVista("playground")}
@@ -528,7 +528,7 @@ export function BancoReglas({
         >
           {chat.length === 0 && !probando ? (
             <p className="m-auto max-w-prose text-center text-sm text-ink-soft">
-              Escribí como un candidato nuevo.
+              Escribe como un candidato nuevo.
             </p>
           ) : (
             chat.map((m) => (
