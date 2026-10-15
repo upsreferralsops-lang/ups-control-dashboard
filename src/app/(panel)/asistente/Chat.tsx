@@ -432,17 +432,30 @@ function Conversacion({
                       : "rounded-2xl rounded-bl-md border border-line bg-paper text-ink"
                   }`}
                 >
-                  {msg.adjunto && (
-                    <span className={`mb-1 flex items-center gap-1.5 text-xs ${propio ? "text-white/85" : "text-ink-soft"}`}>
-                      {msg.adjunto.tipo === "audio" ? (
-                        <IconoMicrofono className="h-3.5 w-3.5 shrink-0" />
-                      ) : (
-                        <IconoAdjuntar className="h-3.5 w-3.5 shrink-0" />
-                      )}
+                  {msg.adjunto && detalle && (msg.adjunto.tipo === "audio" ? (
+                    // La nota de voz se puede escuchar, como en el chat del candidato.
+                    <audio
+                      controls
+                      controlsList="nodownload noplaybackrate noremoteplayback"
+                      preload="metadata"
+                      src={`/api/asistente/${detalle.id}/adjuntos/${msg.id}`}
+                      aria-label="Nota de voz"
+                      className="mb-1 h-10 w-64 max-w-full"
+                    />
+                  ) : (
+                    <a
+                      href={`/api/asistente/${detalle.id}/adjuntos/${msg.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`mb-1 flex items-center gap-1.5 text-xs underline-offset-4 hover:underline ${propio ? "text-white/85" : "text-ink-soft"}`}
+                    >
+                      <IconoAdjuntar className="h-3.5 w-3.5 shrink-0" />
                       {msg.adjunto.nombre}
-                    </span>
+                    </a>
+                  ))}
+                  {!(msg.adjunto?.tipo === "audio" && msg.text === "Nota de voz") && (
+                    <Mensaje texto={msg.text} propio={propio} />
                   )}
-                  <Mensaje texto={msg.text} propio={propio} />
                 </div>
                 {hora(msg.created_at) && (
                   <span className="px-1 text-[11px] tabular-nums text-ink-faint">{hora(msg.created_at)}</span>
