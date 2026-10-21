@@ -128,6 +128,13 @@ function Mensaje({ texto, propio }: { texto: string; propio: boolean }) {
   );
 }
 
+/** Primera linea del plan (el detalle completo ya esta en el mensaje del asistente). */
+function resumenPendiente(texto: string | null | undefined): string {
+  const primera = (texto ?? "").split("\n").find((l) => l.trim())?.trim() ?? "";
+  if (!primera) return "Revisa la acción en el mensaje de arriba.";
+  return `${primera.length > 220 ? `${primera.slice(0, 220)}…` : primera}\n\nEl detalle está en el mensaje de arriba.`;
+}
+
 function preview(texto: string | null | undefined): string {
   if (!texto) return "Sin mensajes";
   const limpio = texto.replace(/\s+/g, " ").trim();
@@ -466,22 +473,26 @@ function Conversacion({
             </article>
           );
         })}
-      </div>
 
-      {detalle?.pending.map((run) => (
-        <div
-          key={run.id}
-          className="border-t border-warn-border bg-warn-wash px-4 py-3.5 md:px-6"
-          role="region"
-          aria-label="Acción pendiente de confirmación"
-        >
-          <p className="text-sm font-semibold text-warn-ink">Confirma antes de continuar</p>
-          <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-ink">
-            {run.arguments._texto || "Revisa la acción antes de seguir."}
-          </p>
-          <BotonesConfirmacion threadId={detalle.id} runId={run.id} />
-        </div>
-      ))}
+        {/* Dentro del chat, debajo del plan: antes iba fuera del scroll y repetia el plan
+            entero en texto crudo, y en el celular los botones quedaban fuera de la pantalla
+            (Carlos, 21/10: nadie confirmo los 12 referidos). El detalle ya esta en el
+            mensaje de arriba; aca va solo el resumen y los botones. */}
+        {detalle?.pending.map((run) => (
+          <div
+            key={run.id}
+            className="ml-9 max-w-[min(42rem,100%)] rounded-2xl border border-warn-border bg-warn-wash px-3.5 py-3"
+            role="region"
+            aria-label="Acción pendiente de confirmación"
+          >
+            <p className="text-sm font-semibold text-warn-ink">Confirma antes de continuar</p>
+            <div className="mt-1 text-sm text-ink">
+              <Mensaje texto={resumenPendiente(run.arguments._texto)} propio={false} />
+            </div>
+            <BotonesConfirmacion threadId={detalle.id} runId={run.id} />
+          </div>
+        ))}
+      </div>
 
       <Composer threadId={detalle?.id ?? null} />
     </section>
